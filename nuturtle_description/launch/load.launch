@@ -2,8 +2,8 @@
 
     <env name = "TURTLEBOT3_MODEL" value = "burger"/>
 
-    <arg name="use_rviz" default="true"/>
-    <arg name="use_jsp" default="false"/>
+    <arg name="use_rviz" default="true" doc="Determines if rviz is to be launched. Default is true."/>
+    <arg name="use_jsp" default="false" doc="Determines if the joint state publisher is to be launched. Default is false."/>
 
     <!-- <include file="$(find slam_toolbox)/online_async.launch"/>
 
@@ -22,6 +22,13 @@
     <param name="robot_description" command = "xacro $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
 
 
-    <node pkg="rviz" type="rviz" name="rviz" if="$(eval arg('use_rviz') == 'true')"/>
+    <group if="$(arg use_rviz)">
+        <node pkg="rviz" type="rviz" name="rviz"/>
+    </group>
+
+    <group if="$(arg use_jsp)">
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+    </group>
+
 
 </launch>
