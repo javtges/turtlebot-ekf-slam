@@ -1,0 +1,56 @@
+<launch>
+
+    <env name = "TURTLEBOT3_MODEL" value = "burger"/>
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
+    <group ns="red">
+
+        <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=red"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+        
+        <node pkg="tf2_ros" type="static_transform_publisher" name="location" args="1 0 0 0 0 0 1 world red-base_footprint" />
+
+    </group>
+
+    <group ns="green">
+
+        <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=green"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="location" args="0 1 0 0 0 0 1 world green-base_footprint" />
+
+    </group>
+
+    <group ns="blue">
+
+        <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=blue"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="location" args="-1 0 0 0 0 0 1 world blue-base_footprint" />
+
+    </group>
+
+    <group ns="black">
+
+        <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=black"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="location" args="0 -1 0 0 0 0 1 world black-base_footprint" />
+
+    </group>
+
+    <node type="rviz" name="rviz" pkg="rviz" args=" -d $(find nuturtle_description)/config/basic_all.rviz -f world"/>
+
+</launch>

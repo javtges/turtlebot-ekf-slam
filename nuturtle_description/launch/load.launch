@@ -23,4 +23,7 @@
 
     </group>
 
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="footprint_broadcaster" args="1 0 0 0 0 0 1 world $(arg color)-base_footprint" />
+
 </launch>
