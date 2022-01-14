@@ -62,16 +62,16 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_link:
+        base_scan:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        base_scan:
+        blue-base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        blue-base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -105,7 +105,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: base_footprint
+    Fixed Frame: blue-base_footprint
     Frame Rate: 30
   Name: root
   Tools:
@@ -129,7 +129,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.228107452392578
+      Distance: 2.266885995864868
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -145,9 +145,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5003982782363892
+      Pitch: 0.6003981828689575
       Target Frame: <Fixed Frame>
-      Yaw: 0.9153978824615479
+      Yaw: 0.7003973126411438
     Saved: ~
 Window Geometry:
   Displays:

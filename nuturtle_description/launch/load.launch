@@ -18,7 +18,7 @@
         </group>
 
         <group if="$(arg use_rviz)">
-            <node type="rviz" name="rviz" pkg="rviz" args=" -d $(find nuturtle_description)/config/basic.rviz"/>
+            <node type="rviz" name="rviz" pkg="rviz" args=" -d $(find nuturtle_description)/config/basic.rviz -f $(arg color)-base_footprint"/>
         </group>
 
     </group>
