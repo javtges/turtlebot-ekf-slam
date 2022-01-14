@@ -8,7 +8,6 @@
   <xacro:property name="wheel_radius" value="${drive['wheel_radius']}"/>
   <xacro:property name="track_width" value="${drive['track_width']}"/>
 
-
   <link name="base_footprint"/>
 
   <joint name="base_joint" type="fixed">
@@ -23,7 +22,10 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
+      <!-- This is what we need to change the color of  -->
+      <!-- <material name="light_black"/> -->
+      <material name="$(arg color)"/>
+
     </visual>
 
     <collision>

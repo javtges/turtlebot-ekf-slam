@@ -4,21 +4,27 @@
 
     <arg name="use_rviz" default="true" doc="Determines if rviz is to be launched. Default is true."/>
     <arg name="use_jsp" default="true" doc="Determines if the joint state publisher is to be launched. Default is false."/>
-
-    <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro"/>
+    <arg name="color" default="black" doc="The color of the turtlebot. Defaults to black."/>
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
+    <group ns="$(arg color)">
 
+        <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=$(arg color)"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <group if="$(arg use_rviz)">
+            <node type="rviz" name="rviz" pkg="rviz" args=" -d $(find nuturtle_description)/config/basic.rviz"/>
+        </group>
+
+        <group if="$(arg use_jsp)">
+            <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+        </group>
+
+    </group>
     
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-    <group if="$(arg use_rviz)">
-        <node type="rviz" name="rviz" pkg="rviz" args=" -d $(find nuturtle_description)/config/basic.rviz"/>
-    </group>
-
-    <group if="$(arg use_jsp)">
-        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
-    </group>
+   
 
 
 </launch>
