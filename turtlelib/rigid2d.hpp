@@ -22,6 +22,13 @@ namespace turtlelib
     /// if given a compile-time constant as input
     constexpr bool almost_equal(double d1, double d2, double epsilon=1.0e-12)
     {
+        double diff = abs(d1-d2);
+        if (diff >= epsilon){
+            return false;
+        }
+        else{
+            return true;
+        }
     }
 
     /// \brief convert degrees to radians
@@ -29,6 +36,7 @@ namespace turtlelib
     /// \returns radians
     constexpr double deg2rad(double deg)
     {
+        return (PI/180)*deg;
     }
 
     /// \brief convert radians to degrees
@@ -36,6 +44,7 @@ namespace turtlelib
     /// \returns the angle in degrees
     constexpr double rad2deg(double rad)
     {
+        return rad * 180 / PI;
     }
 
     /// static_assertions test compile time assumptions.
@@ -60,6 +69,21 @@ namespace turtlelib
         double y = 0.0;
     };
 
+    struct Twist2D
+    {
+        /// \brief the x coordinate
+        double x = 0.0;
+
+        /// \breif the y coordinate
+        double y = 0.0;
+
+        /// \brief the theta rotation 
+        double theta = 0.0;
+
+    };
+    
+    std::ostream & operator<<(std::ostream & os, const Twist2D & v);
+    std::istream & operator>>(std::istream & is, Twist2D & v);
 
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -90,6 +114,9 @@ namespace turtlelib
     /// \brief a rigid body transformation in 2 dimensions
     class Transform2D
     {
+    private:
+        T[3][3];
+    
     public:
         /// \brief Create an identity transformation
         Transform2D();
