@@ -4,7 +4,8 @@
 /// \brief Two-dimensional rigid body transformations.
 
 
-#include<iosfwd> // contains forward definitions for iostream objects
+#include <iosfwd> // contains forward definitions for iostream objects
+#include <cmath>
 
 namespace turtlelib
 {
@@ -115,7 +116,7 @@ namespace turtlelib
     class Transform2D
     {
     private:
-        T[3][3];
+        double T[3][3];
     
     public:
         /// \brief Create an identity transformation
