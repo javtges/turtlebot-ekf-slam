@@ -84,7 +84,10 @@ namespace turtlelib
     };
     
     std::ostream & operator<<(std::ostream & os, const Twist2D & v);
+
     std::istream & operator>>(std::istream & is, Twist2D & v);
+        // string input;
+        // is >> 
 
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -116,7 +119,7 @@ namespace turtlelib
     class Transform2D
     {
     private:
-        double T[3][3];
+        double T[3][3] = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
     
     public:
         /// \brief Create an identity transformation
@@ -162,7 +165,10 @@ namespace turtlelib
 
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
-        friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
+        friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
+            os << "deg: " << rad2deg(acos(tf.T[0][0])) << "x: " << tf.T[0][2] << "y: " << tf.T[1][2];
+            return os;
+        }
 
     };
 
@@ -185,8 +191,6 @@ namespace turtlelib
     /// \return the composition of the two transforms
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
-
-
 
 }
 

@@ -80,7 +80,9 @@ namespace turtlelib{
 
     Transform2D & Transform2D::operator*=(const Transform2D & rhs){
 
-        //Tac = Tab*=Tbc;
+        //Tab*=Tbc;
+        //Tac = (Tab *= Tab);
+        //Tac*=Tbc;
 
         T[0][0] = T[0][0]*rhs.T[0][0] + T[0][1]*rhs.T[1][0] + T[0][2]*rhs.T[2][0];
         T[1][0] = T[1][0]*rhs.T[0][0] + T[1][1]*rhs.T[1][0] + T[1][2]*rhs.T[2][0];
@@ -96,6 +98,38 @@ namespace turtlelib{
     }
 
 
+    Vector2D Transform2D::translation() const{
+        Vector2D newvec;
+        newvec.x = T[0][0];
+        newvec.y = T[0][1];
+        return newvec;
+    }
+
+    double Transform2D::rotation() const{
+        double newrot;
+        newrot = acos(T[0][0]);
+        return newrot;
+    }
+
+    Transform2D operator*(Transform2D lhs, const Transform2D & rhs){
+        return lhs*=rhs;
+    }
+
+
+    std::ostream & operator<<(std::ostream & os, const Twist2D & v){
+        os << "[" << v.x << " " << v.y << " " << v.theta << "]";
+        return os;
+    }
+
+    std::ostream & operator<<(std::ostream & os, const Vector2D & v){
+        os << "[" << v.x << " " << v.y << "]";
+        return os;
+    }
+
+    // std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
+        // os << "deg: " << rad2deg(acos(tf.rotation())) << "x: " << tf.translation().x << "y: " << tf.translation().y;
+        // return os;
+    // }
 
 
 }
