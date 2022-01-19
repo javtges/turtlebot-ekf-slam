@@ -21,11 +21,11 @@ namespace turtlelib{
 
     Transform2D::Transform2D(double radians){
 
-        T[0][0] = cos(radians);
-        T[1][0] = sin(radians);
+        T[0][0] = cos(deg2rad(radians));
+        T[1][0] = sin(deg2rad(radians));
         T[2][0] = 0;
-        T[0][1] = -sin(radians);
-        T[1][1] = cos(radians);
+        T[0][1] = -sin(deg2rad(radians));
+        T[1][1] = cos(deg2rad(radians));
         T[2][1] = 0;
         T[0][2] = 0;
         T[1][2] = 0;
@@ -36,11 +36,11 @@ namespace turtlelib{
 
     Transform2D::Transform2D(Vector2D trans, double radians){
 
-        T[0][0] = cos(radians);
-        T[1][0] = sin(radians);
+        T[0][0] = cos(deg2rad(radians));
+        T[1][0] = sin(deg2rad(radians));
         T[2][0] = 0;
-        T[0][1] = -sin(radians);
-        T[1][1] = cos(radians);
+        T[0][1] = -sin(deg2rad(radians));
+        T[1][1] = cos(deg2rad(radians));
         T[2][1] = 0;
         T[0][2] = trans.x;
         T[1][2] = trans.y;
@@ -98,7 +98,6 @@ namespace turtlelib{
         return *this;
     }
 
-
     Vector2D Transform2D::translation() const{
         Vector2D newvec;
         newvec.x = T[0][0];
@@ -136,6 +135,15 @@ namespace turtlelib{
         if (c1 == 'd'){
 
             is.get(str,6);
+            is >> theta;
+            is.get(str,4);
+            is >> vec.x;
+            is.get(str,4);
+            is >> vec.y;
+
+            Transform2D output(vec,theta);
+            tf = output;
+
         }
 
         return is;

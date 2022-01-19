@@ -144,6 +144,8 @@ namespace turtlelib
         /// \return a vector in the new coordinate system
         Vector2D operator()(Vector2D v) const;
 
+        Twist2D operator()(Twist2D v) const;
+
 
         /// \brief invert the transformation
         /// \return the inverse transformation. 
@@ -166,7 +168,7 @@ namespace turtlelib
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
         friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
-            os << "deg: " << rad2deg(acos(tf.T[0][0])) << "x: " << tf.T[0][2] << "y: " << tf.T[1][2] << "\n";
+            os << "deg: " << rad2deg(acos(tf.T[0][0])) << " x: " << tf.T[0][2] << " y: " << tf.T[1][2] << "\n";
             return os;
         }
 
