@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include "rigid2d.hpp"
 #include <cmath>
 
@@ -117,14 +118,55 @@ namespace turtlelib{
 
 
     std::ostream & operator<<(std::ostream & os, const Twist2D & v){
-        os << "[" << v.x << " " << v.y << " " << v.theta << "]";
+        os << "[" << v.xdot << " " << v.ydot << " " << v.thetadot << "]\n";
         return os;
     }
 
     std::ostream & operator<<(std::ostream & os, const Vector2D & v){
-        os << "[" << v.x << " " << v.y << "]";
+        os << "[" << v.x << " " << v.y << "]\n";
         return os;
     }
+
+    std::istream & operator>>(std::istream & is, Transform2D & tf){
+        Vector2D vec;
+        double theta;
+        char str[6];
+        char c1;
+        c1 = is.peek();
+        if (c1 == 'd'){
+
+            is.get(str,6);
+        }
+
+        return is;
+    }
+
+    std::istream & operator>>(std::istream & is, Twist2D & v){
+        char c1;
+        c1 = is.peek();
+        if (c1 == '['){
+            is.get();
+        }
+        
+        is >> v.xdot >> v.ydot >> v.thetadot;
+
+        return is;
+    }
+
+    std::istream & operator>>(std::istream & is, Vector2D & v){
+        
+        char c1;
+        c1 = is.peek();
+        if (c1 == '['){
+            is.get();
+        }
+       
+        is >> v.x >> v.y;
+
+        return is;
+    }
+
+
 
     // std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
         // os << "deg: " << rad2deg(acos(tf.rotation())) << "x: " << tf.translation().x << "y: " << tf.translation().y;

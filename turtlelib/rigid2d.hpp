@@ -73,13 +73,13 @@ namespace turtlelib
     struct Twist2D
     {
         /// \brief the x coordinate
-        double x = 0.0;
+        double xdot = 0.0;
 
         /// \breif the y coordinate
-        double y = 0.0;
+        double ydot = 0.0;
 
         /// \brief the theta rotation 
-        double theta = 0.0;
+        double thetadot = 0.0;
 
     };
     
@@ -166,7 +166,7 @@ namespace turtlelib
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
         friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
-            os << "deg: " << rad2deg(acos(tf.T[0][0])) << "x: " << tf.T[0][2] << "y: " << tf.T[1][2];
+            os << "deg: " << rad2deg(acos(tf.T[0][0])) << "x: " << tf.T[0][2] << "y: " << tf.T[1][2] << "\n";
             return os;
         }
 
