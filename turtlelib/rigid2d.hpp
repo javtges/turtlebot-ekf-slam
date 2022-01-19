@@ -146,6 +146,9 @@ namespace turtlelib
 
         Twist2D operator()(Twist2D v) const;
 
+        Vector2D normalize(Vector2D v) const;
+
+
 
         /// \brief invert the transformation
         /// \return the inverse transformation. 
@@ -167,10 +170,12 @@ namespace turtlelib
 
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
-        friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
-            os << "deg: " << rad2deg(acos(tf.T[0][0])) << " x: " << tf.T[0][2] << " y: " << tf.T[1][2] << "\n";
-            return os;
-        }
+        friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
+        
+        // {
+        //     os << "deg: " << rad2deg(asin(tf.T[1][0])) << " x: " << tf.T[0][2] << " y: " << tf.T[1][2] << "\n";
+        //     return os;
+        // }
 
     };
 
@@ -193,6 +198,7 @@ namespace turtlelib
     /// \return the composition of the two transforms
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
+
 
 }
 
