@@ -5,24 +5,36 @@
 #include <std_msgs/UInt64.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <std_srvs/Empty.h>
 
 
+static std_msgs::UInt64 ts;
+
+
+bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response &Response){
+    ts.data = 0;
+    return true;
+}
 
 
 
 int main(int argc, char * argv[])
 {
     ros::init(argc, argv, "nusim");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     // read parameters, create publishers/subscribers
-    int frequency = 500; //nh.getParam("~frequency");
+    int frequency = 500;
+    nh.setParam("frequency", 500);
+
+    int fq;
+    nh.getParam("frequency", fq);
 
     ros::Rate r(frequency);
 
-    ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("ts", frequency);
+    ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("timestep", fq);
+    ros::ServiceServer service = nh.advertiseService("reset", resetCallback);
 
-    std_msgs::UInt64 ts;
     ts.data = 0;
 
 
