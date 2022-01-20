@@ -57,7 +57,7 @@ namespace turtlelib{
         return outVec;
     }
 
-    Vector2D Transform2D::normalize(Vector2D v) const{
+    Vector2D normalize(Vector2D v){
         Vector2D output;
         
         double mag = sqrt(v.x * v.x + v.y * v.y);
@@ -168,7 +168,6 @@ namespace turtlelib{
         double theta;
         char str[6];
         char c1;
-        std::cin >> std::ws;
         c1 = is.peek();
         if (c1 == 'd'){
 

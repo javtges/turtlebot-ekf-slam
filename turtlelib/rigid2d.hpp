@@ -60,6 +60,8 @@ namespace turtlelib
 
     static_assert(almost_equal(deg2rad(rad2deg(2.1)), 2.1), "deg2rad failed");
 
+
+
     /// \brief A 2-Dimensional Vector
     struct Vector2D
     {
@@ -83,6 +85,9 @@ namespace turtlelib
 
     };
     
+    Vector2D normalize(Vector2D v);
+
+
     std::ostream & operator<<(std::ostream & os, const Twist2D & v);
 
     std::istream & operator>>(std::istream & is, Twist2D & v);
@@ -145,10 +150,6 @@ namespace turtlelib
         Vector2D operator()(Vector2D v) const;
 
         Twist2D operator()(Twist2D v) const;
-
-        Vector2D normalize(Vector2D v) const;
-
-
 
         /// \brief invert the transformation
         /// \return the inverse transformation. 

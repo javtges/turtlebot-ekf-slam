@@ -31,7 +31,7 @@ int main(void){
 
     cout << "Enter vector v_b:" << endl;
     cin >> v_b;
-    v_bhat = Tab.normalize(v_b);
+    v_bhat = normalize(v_b);
     v_a = Tab(v_b);
     v_c = Tcb(v_b);
 
