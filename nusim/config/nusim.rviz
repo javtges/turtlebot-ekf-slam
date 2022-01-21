@@ -7,7 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /RobotModel1/Status1
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 732
   - Class: rviz/Selection
@@ -103,6 +103,14 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /nusim/obstacles
+      Name: MarkerArray
+      Namespaces:
+        obstacles: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -131,7 +139,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.484991073608398
+      Distance: 3.8602852821350098
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -147,9 +155,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6003981828689575
+      Pitch: 0.5303980112075806
       Target Frame: <Fixed Frame>
-      Yaw: 0.7003973126411438
+      Yaw: 0.9003968834877014
     Saved: ~
 Window Geometry:
   Displays:
