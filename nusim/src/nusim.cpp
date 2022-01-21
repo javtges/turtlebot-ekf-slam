@@ -43,7 +43,7 @@ bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Respon
 
 visualization_msgs::MarkerArray addObstacles(std::vector<double> radii, std::vector<double> x_locs, std::vector<double> y_locs){
 
-    int l = 3; //radii.size();
+    int l = radii.size();
     visualization_msgs::MarkerArray maTemp;
     maTemp.markers.resize(l);
 
