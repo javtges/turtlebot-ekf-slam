@@ -181,3 +181,13 @@ TEST_CASE("rot", "[rotation]") { //Anna Garverick
 
     REQUIRE(d == Approx(33).margin(.001));
 }
+
+
+TEST_CASE("normalize"){ // Cody Nichoson
+    turtlelib::Vector2D v_in, v_out;
+    v_in.x = 1; 
+    v_in.y = 1;
+    v_out = normalize(v_in);
+    REQUIRE(v_out.x == Approx(0.707).margin(0.001));
+    REQUIRE(v_out.y == Approx(0.707).margin(0.001));
+}
