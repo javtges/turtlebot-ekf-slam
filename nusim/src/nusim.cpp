@@ -11,6 +11,8 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <turtlesim/Pose.h>
 #include "nusim/teleport.h"
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/Marker.h>
 
 static std_msgs::UInt64 ts;
 static sensor_msgs::JointState jointState;
@@ -39,6 +41,7 @@ int main(int argc, char * argv[])
 {
     ros::init(argc, argv, "nusim");
     ros::NodeHandle nh("~");
+    ros::NodeHandle ob("~obstacles");
     ros::NodeHandle n;
 
     // read parameters, create publishers/subscribers
@@ -58,6 +61,8 @@ int main(int argc, char * argv[])
 
     ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("timestep", fq);
     ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",1);
+    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("obstacles",0);
+
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
 
@@ -69,7 +74,7 @@ int main(int argc, char * argv[])
     {
 
         jointState.header.stamp = ros::Time::now();
-        jointState.name = {"red_wheel_left_joint", "red_wheel_right_joint"};
+        jointState.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
         jointState.position = {0.0, 0.0};
         jointState.velocity = {0.0, 0.0};
         jointState.effort = {0.0, 0.0};
@@ -77,7 +82,7 @@ int main(int argc, char * argv[])
         static tf2_ros::TransformBroadcaster br;
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "world";
-        transformStamped.child_frame_id = "red_base_footprint";
+        transformStamped.child_frame_id = "red-base_footprint";
         transformStamped.transform.translation.x = x;
         transformStamped.transform.translation.y = y;
         transformStamped.transform.translation.z = 0.0;
