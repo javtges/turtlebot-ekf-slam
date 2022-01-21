@@ -17,10 +17,13 @@ static sensor_msgs::JointState jointState;
 // static tf2_ros::TransformBroadcaster br;
 static geometry_msgs::TransformStamped transformStamped;
 static double x, y, theta;
-
+static double x_0, y_0, theta_0;
 
 bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response &Response){
     ts.data = 0;
+    x = x_0;
+    y = y_0;
+    theta = theta_0;
     return true;
 }
 
@@ -41,6 +44,12 @@ int main(int argc, char * argv[])
     // read parameters, create publishers/subscribers
     int frequency = 500;
     nh.setParam("frequency", 500);
+    // nh.setParam("x0", 0);
+    // nh.setParam("y0", 0);
+    // nh.setParam("theta0", 0);
+    nh.param("x0", x_0, 0.0);
+    nh.param("y0", y_0, 0.0);
+    nh.param("theta0", theta_0, 0.0);
 
     int fq;
     nh.getParam("frequency", fq);
@@ -52,7 +61,7 @@ int main(int argc, char * argv[])
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
 
-    x = 0; y = 0; theta = 0;
+    x = x_0; y = y_0; theta = theta_0;
     ts.data = 0;
 
 
