@@ -74,14 +74,15 @@ namespace turtlelib
 
     struct Twist2D
     {
+        
+        /// \brief the theta rotation 
+        double thetadot = 0.0;
+        
         /// \brief the x coordinate
         double xdot = 0.0;
 
         /// \breif the y coordinate
         double ydot = 0.0;
-
-        /// \brief the theta rotation 
-        double thetadot = 0.0;
 
     };
     

@@ -578,10 +578,10 @@ TEST_CASE("Transform2D::operator(Twist2D), Idenity Transform", "[Transform2D]") 
 {
     //Build objects
     Transform2D T_ab{0};
-    Twist2D twt_b{PI/6, 1.0, 2.0};
+    Twist2D twt_b{30, 1.0, 2.0};
 
     // Answer
-    Twist2D twt_ans{0.52359878, 1.0, 2.0};
+    Twist2D twt_ans{30, 1.0, 2.0};
 
     //Perform functions
     Twist2D res_twt = T_ab(twt_b);
@@ -595,11 +595,11 @@ TEST_CASE("Transform2D::operator(Twist2D), Idenity Transform", "[Transform2D]") 
 TEST_CASE("Transform2D::operator(Twist2D), Simple Rotation", "[Transform2D]") // RKS
 {
     //Build objects
-    Transform2D T_ab{rad2deg(PI/4)};
-    Twist2D twt_b{rad2deg(PI/6), 1.0, 2.0};
+    Transform2D T_ab{45};
+    Twist2D twt_b{30, 1.0, 2.0};
 
     // Answer
-    Twist2D twt_ans{0.52359878, -0.70710678, 2.12132034};
+    Twist2D twt_ans{30, -0.70710678, 2.12132034};
 
     //Perform functions
     Twist2D res_twt = T_ab(twt_b);
@@ -615,13 +615,14 @@ TEST_CASE("Transform2D::operator(Twist2D), Simple Translation", "[Transform2D]")
     //Build objects
     Vector2D vec_a{2.0, -2.0};
     Transform2D T_ab{vec_a};
-    Twist2D twt_b{rad2deg(PI/6), 1.0, 2.0};
+    Twist2D twt_b{deg2rad(30), 1.0, 2.0};
 
     // Answer
-    Twist2D twt_ans{0.52359878, -0.04719755, 0.95280245};
+    Twist2D twt_ans{deg2rad(30), -0.04719755, 0.95280245};
 
     //Perform functions
     Twist2D res_twt = T_ab(twt_b);
+    std::cout << res_twt;
 
     // Tests
     REQUIRE(res_twt.thetadot == Approx ( (twt_ans.thetadot)).margin(epsilon));
@@ -633,11 +634,11 @@ TEST_CASE("Transform2D::operator(Twist2D), Simple Transformation", "[Transform2D
 {
     //Build objects
     Vector2D vec_a{2.0, -2.0};
-    Transform2D T_ab{vec_a, rad2deg(PI/4)};
-    Twist2D twt_b{PI/6, 1.0, 2.0};
+    Transform2D T_ab{vec_a, 45};
+    Twist2D twt_b{deg2rad(30), 1.0, 2.0};
 
     // Answer
-    Twist2D twt_ans{0.52359878, -1.75430433, 1.07412279};
+    Twist2D twt_ans{deg2rad(30), -1.75430433, 1.07412279};
 
     //Perform functions
     Twist2D res_twt = T_ab(twt_b);
