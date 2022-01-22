@@ -2,10 +2,15 @@
 #include <string>
 #include "../include/turtlelib/rigid2d.hpp"
 #include <cmath>
+/// \file
+/// \brief The corresponding cpp file for "rigid2d.hpp", for two-dimensional rigid body transformations.
 
 
 namespace turtlelib{
 
+
+    /// \brief defines a Transform2D object with a Vector2D translation
+    /// \param trans - input Vector2D with x and y translational components
     Transform2D::Transform2D(Vector2D trans){
 
         T[0][0] = 1;
@@ -19,13 +24,15 @@ namespace turtlelib{
         T[2][2] = 1;
     }
 
-    Transform2D::Transform2D(double radians){
+    /// \brief defines a Transform2D object with a double degrees rotation only
+    /// \param degrees - input double of degrees
+    Transform2D::Transform2D(double degrees){
 
-        T[0][0] = cos(deg2rad(radians));
-        T[1][0] = sin(deg2rad(radians));
+        T[0][0] = cos(deg2rad(degrees));
+        T[1][0] = sin(deg2rad(degrees));
         T[2][0] = 0;
-        T[0][1] = -sin(deg2rad(radians));
-        T[1][1] = cos(deg2rad(radians));
+        T[0][1] = -sin(deg2rad(degrees));
+        T[1][1] = cos(deg2rad(degrees));
         T[2][1] = 0;
         T[0][2] = 0;
         T[1][2] = 0;
@@ -33,14 +40,16 @@ namespace turtlelib{
 
     }
 
+    /// \brief defines a Transform2D object with a Vector2D rotation and double degrees rotation
+    /// \param trans - input Vector2D with x and y translational components
+    /// \param degrees - input double of degrees
+    Transform2D::Transform2D(Vector2D trans, double degrees){
 
-    Transform2D::Transform2D(Vector2D trans, double radians){
-
-        T[0][0] = cos(deg2rad(radians));
-        T[1][0] = sin(deg2rad(radians));
+        T[0][0] = cos(deg2rad(degrees));
+        T[1][0] = sin(deg2rad(degrees));
         T[2][0] = 0;
-        T[0][1] = -sin(deg2rad(radians));
-        T[1][1] = cos(deg2rad(radians));
+        T[0][1] = -sin(deg2rad(degrees));
+        T[1][1] = cos(deg2rad(degrees));
         T[2][1] = 0;
         T[0][2] = trans.x;
         T[1][2] = trans.y;
@@ -48,6 +57,10 @@ namespace turtlelib{
 
     }
 
+
+    /// \brief apply a transformation to a Vector2D
+    /// \param v - the vector to transform
+    /// \return a vector in the new coordinate system
     Vector2D Transform2D::operator()(Vector2D v) const{
 
         Vector2D outVec;
@@ -57,6 +70,9 @@ namespace turtlelib{
         return outVec;
     }
 
+    /// \brief normalize a Vector2D object
+    /// \param v - the vector to normalize
+    /// \return a normalized Vector2D object with a magnitude of 1 (unit vector)
     Vector2D normalize(Vector2D v){
         Vector2D output;
         
@@ -67,6 +83,9 @@ namespace turtlelib{
         return output;
     }
 
+    /// \brief apply a transformation to a Twist2D
+    /// \param v - the twist to transform
+    /// \return a twist in the new coordinate system
     Twist2D Transform2D::operator()(Twist2D v) const{
 
         Twist2D outTwist;
@@ -77,6 +96,8 @@ namespace turtlelib{
         return outTwist;
     }
 
+    /// \brief invert the Transformation2D object
+    /// \return the inverse transformation 
     Transform2D Transform2D::inv() const{
         Transform2D Tinv1(0);
         Transform2D Tinv2(0);
@@ -104,11 +125,11 @@ namespace turtlelib{
         return Tinv1 * Tinv2;
     }
 
+    /// \brief compose this transform with another and store the result 
+    /// in this object
+    /// \param rhs - the first transform to apply
+    /// \return a reference to the newly transformed operator
     Transform2D & Transform2D::operator*=(const Transform2D & rhs){
-
-        //Tab*=Tbc;
-        //Tac = (Tab *= Tab);
-        //Tac*=Tbc;
 
         // Thanks to Anna Garverick for the idea to use constant values for the LHS indices!
 
@@ -135,6 +156,8 @@ namespace turtlelib{
         return *this;
     }
 
+    /// \brief the translational component of the transform
+    /// \return the x,y translation
     Vector2D Transform2D::translation() const{
         Vector2D newvec;
         newvec.x = T[0][2];
@@ -142,27 +165,47 @@ namespace turtlelib{
         return newvec;
     }
 
+    /// \brief get the angular displacement of the transform
+    /// \return the angular displacement, in radians
     double Transform2D::rotation() const{
         double newrot;
         newrot = atan2(T[1][0], T[0][0]);
         return newrot;
     }
 
+    /// \brief multiply two transforms together, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the composition of the two transforms
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs){
         return lhs*=rhs;
     }
 
-
+    /// \brief prints a human readable version of the Twist:
+    /// An example output:
+    /// [1 2 3]
+    /// \param os - an output stream
+    /// \param tf - the twist to print
     std::ostream & operator<<(std::ostream & os, const Twist2D & v){
         os << "[" << v.thetadot << " " << v.xdot << " " << v.ydot << "]\n";
         return os;
     }
 
+    /// \brief prints a human readable version of the Vector2D:
+    /// An example output:
+    /// [1 3]
+    /// \param os - an output stream
+    /// \param tf - the vector to print
     std::ostream & operator<<(std::ostream & os, const Vector2D & v){
         os << "[" << v.x << " " << v.y << "]\n";
         return os;
     }
 
+    /// \brief Read a transformation from stdin
+    /// \param is - an input stream
+    /// \param tf - the transform to input
+    /// An example input:
+    /// deg: 90 x: 3 y: 5
     std::istream & operator>>(std::istream & is, Transform2D & tf){
         Vector2D vec;
         double theta;
@@ -187,6 +230,11 @@ namespace turtlelib{
         return is;
     }
 
+    /// \brief Read a Twist2D from stdin
+    /// \param is - an input stream
+    /// \param tf - the twist to input
+    /// An example input:
+    /// [1 2 3] or 1 2 3
     std::istream & operator>>(std::istream & is, Twist2D & v){
         char c1;
         c1 = is.peek();
@@ -200,6 +248,11 @@ namespace turtlelib{
         return is;
     }
 
+    /// \brief Read a Vector2D from stdin
+    /// \param is - an input stream
+    /// \param tf - the vector to input
+    /// An example input:
+    /// [1 2] or 1 2
     std::istream & operator>>(std::istream & is, Vector2D & v){
         
         char c1;
@@ -214,6 +267,11 @@ namespace turtlelib{
         return is;
     }
 
+    /// \brief prints a human readable version of the transform:
+    /// An example output:
+    /// deg: 90 x: 3 y: 5
+    /// \param os - an output stream
+    /// \param tf - the transform to print
     std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
         os << "deg: " << rad2deg(tf.rotation()) << " x: " << tf.translation().x << " y: " << tf.translation().y << "\n";
         return os;

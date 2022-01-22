@@ -72,6 +72,7 @@ namespace turtlelib
         double y = 0.0;
     };
 
+    /// \brief A 2-Dimensional Twist
     struct Twist2D
     {
         
@@ -88,12 +89,15 @@ namespace turtlelib
     
     Vector2D normalize(Vector2D v);
 
-
+    /// \brief output a 2D Twist as [thetadot xdot ydot]
+    /// os - output stream
+    /// v - the twist to print
     std::ostream & operator<<(std::ostream & os, const Twist2D & v);
 
+    /// \brief input a 2D Twist as [thetadot xdot ydot]
+    /// is - input stream
+    /// v - the twist to set
     std::istream & operator>>(std::istream & is, Twist2D & v);
-        // string input;
-        // is >> 
 
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -137,23 +141,26 @@ namespace turtlelib
 
         /// \brief create a pure rotation
         /// \param radians - angle of the rotation, in radians
-        explicit Transform2D(double radians);
+        explicit Transform2D(double degrees);
 
         /// \brief Create a transformation with a translational and rotational
         /// component
         /// \param trans - the translation
         /// \param rot - the rotation, in radians
-        Transform2D(Vector2D trans, double radians);
+        Transform2D(Vector2D trans, double degrees);
 
         /// \brief apply a transformation to a Vector2D
         /// \param v - the vector to transform
         /// \return a vector in the new coordinate system
         Vector2D operator()(Vector2D v) const;
-
+        
+        /// \brief apply a transformation to a Twist2D
+        /// \param v - the twist to transform
+        /// \return a twist in the new coordinate system
         Twist2D operator()(Twist2D v) const;
 
         /// \brief invert the transformation
-        /// \return the inverse transformation. 
+        /// \return the inverse transformation 
         Transform2D inv() const;
 
         /// \brief compose this transform with another and store the result 
@@ -173,14 +180,8 @@ namespace turtlelib
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
         friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
-        
-        // {
-        //     os << "deg: " << rad2deg(asin(tf.T[1][0])) << " x: " << tf.T[0][2] << " y: " << tf.T[1][2] << "\n";
-        //     return os;
-        // }
 
     };
-
 
     /// \brief should print a human readable version of the transform:
     /// An example output:
@@ -200,7 +201,6 @@ namespace turtlelib
     /// \return the composition of the two transforms
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
-
 
 }
 
