@@ -2,5 +2,6 @@
 * James Avtges
 * Winter 2022
 # Package List
-This repository consists of several ROS packages
+This repository consists of several ROS packages:
 - nuturtle_description - Displays multiple turtlebot3 models in rviz, each appearing with a different color with physical properties of the robot customizable.
+- nusim - Displays a red turtlebot in rviz, with 3 customizable cylindrical obstacles also displayed. The robot can teleport to a location and reset itself.
