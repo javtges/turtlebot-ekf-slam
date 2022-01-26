@@ -1,6 +1,5 @@
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
-#include "../include/turtlelib/rigid2d.hpp"
+#include <catch_ros/catch.hpp>
+#include <turtlelib/rigid2d.hpp>
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
