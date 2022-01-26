@@ -2,3 +2,4 @@
 
 wheel_radius: 0.033
 track_width: 0.16
+collision_radius: 0.11
