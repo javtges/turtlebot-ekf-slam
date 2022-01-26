@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <iostream>
-#include "../include/turtlelib/rigid2d.hpp"
+#include "turtlelib/rigid2d.hpp"
 /// \file
 /// \brief A main file for inputting, calculating various 2D Transformations.
 
@@ -11,8 +11,15 @@ int main(void){
 
     /// Defines the Transform2D, Vector2D, and Twist2D objects that will be used in this program.
     turtlelib::Transform2D Tab(0), Tbc(0), Tba(0), Tcb(0), Tac(0), Tca(0);
-    turtlelib::Vector2D v_b, v_bhat, v_c, v_a;
+    turtlelib::Vector2D v_b, v_bhat, v_c, v_a, test;
     turtlelib::Twist2D V_a, V_b, V_c;
+
+    cout << "test test" << endl;
+    cin >> test;
+    cout << test + test;
+    cout << test - test;
+    cout << test * 4;
+    cout << 4 * test;
 
     /// Inputting Transform2D objects, and calculating other transfroms from these two
     cout << "Enter transform T_{a,b}:" << endl;

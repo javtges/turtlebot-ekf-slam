@@ -70,6 +70,10 @@ namespace turtlelib
 
         /// \brief the y coordinate
         double y = 0.0;
+
+        Vector2D & operator+=(const Vector2D & rhs);
+        Vector2D & operator-=(const Vector2D & rhs);
+        Vector2D & operator*=(const double & rhs);
     };
 
     /// \brief A 2-Dimensional Twist
@@ -90,6 +94,12 @@ namespace turtlelib
     Vector2D normalize(Vector2D v);
 
     double normalize_angle(double rad);
+
+    double dot(Vector2D lhs, Vector2D rhs);
+
+    double magnitude(Vector2D lhs, Vector2D rhs);
+
+    double angle(Vector2D lhs, Vector2D rhs);
 
     /// \brief output a 2D Twist as [thetadot xdot ydot]
     /// os - output stream
@@ -203,6 +213,13 @@ namespace turtlelib
     /// \return the composition of the two transforms
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
+
+    Vector2D operator+(Vector2D lhs, const Vector2D & rhs);
+    Vector2D operator-(Vector2D lhs, const Vector2D & rhs);
+    Vector2D operator*(Vector2D lhs, const double & rhs);
+    Vector2D operator*(const double & lhs, Vector2D rhs);
+
+
 
 }
 

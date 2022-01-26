@@ -164,6 +164,61 @@ namespace turtlelib{
         return *this;
     }
 
+    Vector2D & Vector2D::operator+=(const Vector2D & rhs){
+
+        this->x += rhs.x;
+        this->y += rhs.y;
+        return *this;
+    }
+
+    Vector2D & Vector2D::operator-=(const Vector2D & rhs){
+
+        this->x -= rhs.x;
+        this->y -= rhs.y;
+        return *this;
+    }
+
+    Vector2D & Vector2D::operator*=(const double & rhs){
+
+        this->x *= rhs;
+        this->y *= rhs;
+        return *this;
+    }
+
+    // double & Vector2D::operator*=(const Vector2D & rhs){
+        
+    // }
+
+    Vector2D operator+(Vector2D lhs, const Vector2D & rhs){
+        return lhs+=rhs;
+    }
+
+    Vector2D operator-(Vector2D lhs, const Vector2D & rhs){
+        return lhs-=rhs;
+    }
+
+    Vector2D operator*(Vector2D lhs, const double & rhs){
+        return lhs*=rhs;
+    }
+
+    Vector2D operator*(const double & lhs, Vector2D rhs){
+        return rhs*=lhs;
+    }
+
+    double dot(Vector2D lhs, Vector2D rhs){
+        double dot_product;
+        dot_product = (lhs.x + rhs.x) + (lhs.y + rhs.y);
+        return dot_product;
+    }
+
+    double magnitude(Vector2D vec){
+        return sqrt(vec.x*vec.x + vec.y*vec.y);
+    }
+
+    double angle(Vector2D lhs, Vector2D rhs){
+        return acos(dot(lhs,rhs) / magnitude(lhs) * magnitude(rhs));
+    }
+
     /// \brief the translational component of the transform
     /// \return the x,y translation
     Vector2D Transform2D::translation() const{
