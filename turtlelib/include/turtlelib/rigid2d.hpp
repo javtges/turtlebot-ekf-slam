@@ -89,6 +89,8 @@ namespace turtlelib
     
     Vector2D normalize(Vector2D v);
 
+    double normalize_angle(double rad);
+
     /// \brief output a 2D Twist as [thetadot xdot ydot]
     /// os - output stream
     /// v - the twist to print

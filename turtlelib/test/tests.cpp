@@ -191,6 +191,16 @@ TEST_CASE("normalize"){ // Cody Nichoson
     REQUIRE(v_out.y == Approx(0.707).margin(0.001));
 }
 
+TEST_CASE("normalize_angle", "[Transform2D]"){ // James Avtges
+    REQUIRE(normalize_angle(PI) == Approx(PI).margin(0.001));
+    REQUIRE(normalize_angle(-1*PI) == Approx(PI).margin(0.001));
+    REQUIRE(normalize_angle((-1*PI)+0.0001) == Approx((-1*PI)+0.0001).margin(0.001));
+    REQUIRE(normalize_angle(0) == Approx(0).margin(0.001));
+    REQUIRE(normalize_angle(-1*PI/4) == Approx(-1*PI/4).margin(0.001));
+    REQUIRE(normalize_angle(3*PI/2) == Approx(-1*PI/2).margin(0.001));
+    REQUIRE(normalize_angle(-5*PI/2) == Approx(-1*PI/2).margin(0.001));
+}
+
 
 ////////////////// TRANSFORM2D ////////////
 

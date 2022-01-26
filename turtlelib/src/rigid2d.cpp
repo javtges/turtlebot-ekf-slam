@@ -83,6 +83,14 @@ namespace turtlelib{
         return output;
     }
 
+    double normalize_angle(double rad){
+        long double d = std::fmod(rad-PI, 2*PI);
+        if (d > 0){
+            d -= 2*PI;
+        }
+        return d + PI;
+    }
+
     /// \brief apply a transformation to a Twist2D
     /// \param v - the twist to transform
     /// \return a twist in the new coordinate system
