@@ -185,10 +185,6 @@ namespace turtlelib{
         return *this;
     }
 
-    // double & Vector2D::operator*=(const Vector2D & rhs){
-        
-    // }
-
     Vector2D operator+(Vector2D lhs, const Vector2D & rhs){
         return lhs+=rhs;
     }
@@ -234,6 +230,32 @@ namespace turtlelib{
         double newrot;
         newrot = atan2(T[1][0], T[0][0]);
         return newrot;
+    }
+
+
+    Transform2D Transform2D::integrate_twist(Twist2D twist){
+        double new_angle;
+        Vector2D new_pos;
+        Transform2D T_adj(0);
+        Twist2D displacement;
+        
+        T_adj.T[0][0] = 1;
+        T_adj.T[1][0] = T[1][2];
+        T_adj.T[2][0] = -1*T[0][2];
+        T_adj.T[0][1] = 0;
+        T_adj.T[1][1] = T[0][0];
+        T_adj.T[2][1] = T[1][0];
+        T_adj.T[0][2] = 0;
+        T_adj.T[1][2] = T[0][1];
+        T_adj.T[2][2] = T[1][1];
+
+        displacement = T_adj(twist);
+        new_angle = displacement.thetadot;
+        new_pos.x = displacement.xdot;
+        new_pos.y = displacement.ydot;
+        
+        Transform2D result(new_pos,new_angle);
+        return result;
     }
 
     /// \brief multiply two transforms together, returning their composition

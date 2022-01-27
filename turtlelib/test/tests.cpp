@@ -201,6 +201,30 @@ TEST_CASE("normalize_angle", "[Transform2D]"){ // James Avtges
     REQUIRE(normalize_angle(-5*PI/2) == Approx(-1*PI/2).margin(0.001));
 }
 
+TEST_CASE("twist integration", "[Transform2D]"){ // James Avtges
+    Transform2D test_transform(0), res1(0), res2(0), res3(0);
+    Twist2D rotation, translation, both;
+    rotation.thetadot = 5;
+    translation.xdot = 3;
+    translation.ydot = 2;
+    both.thetadot = 5;
+    both.xdot = 3;
+    both.ydot = 2;
+
+    res1 = test_transform.integrate_twist(rotation);
+    res2 = test_transform.integrate_twist(translation);
+    res3 = test_transform.integrate_twist(both);
+
+    REQUIRE(res1.rotation() == Approx(deg2rad(5)).margin(epsilon));
+    REQUIRE(res2.translation().x == Approx(3).margin(epsilon));
+    REQUIRE(res2.translation().y == Approx(2).margin(epsilon));
+    REQUIRE(res3.rotation() == Approx(deg2rad(5)).margin(epsilon));
+    REQUIRE(res3.translation().x == Approx(3).margin(epsilon));
+    REQUIRE(res3.translation().y == Approx(2).margin(epsilon));
+
+
+}
+
 
 ////////////////// TRANSFORM2D ////////////
 
