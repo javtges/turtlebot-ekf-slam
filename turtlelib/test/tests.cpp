@@ -204,24 +204,25 @@ TEST_CASE("normalize_angle", "[Transform2D]"){ // James Avtges
 TEST_CASE("twist integration", "[Transform2D]"){ // James Avtges
     Transform2D test_transform(0), res1(0), res2(0), res3(0);
     Twist2D rotation, translation, both;
-    rotation.thetadot = 5;
+    rotation.thetadot = PI/2;
     translation.xdot = 3;
     translation.ydot = 2;
-    both.thetadot = 5;
-    both.xdot = 3;
-    both.ydot = 2;
+    both.thetadot = PI/2;
+    both.xdot = 1;
+    both.ydot = 1;
 
-    res1 = test_transform.integrate_twist(rotation);
-    res2 = test_transform.integrate_twist(translation);
-    res3 = test_transform.integrate_twist(both);
+    res1 = integrate_twist(rotation);
+    res2 = integrate_twist(translation);
+    res3 = integrate_twist(both);
 
-    REQUIRE(res1.rotation() == Approx(deg2rad(5)).margin(epsilon));
+    REQUIRE(res1.rotation() == Approx(PI/2).margin(epsilon));
+
     REQUIRE(res2.translation().x == Approx(3).margin(epsilon));
     REQUIRE(res2.translation().y == Approx(2).margin(epsilon));
-    REQUIRE(res3.rotation() == Approx(deg2rad(5)).margin(epsilon));
-    REQUIRE(res3.translation().x == Approx(3).margin(epsilon));
-    REQUIRE(res3.translation().y == Approx(2).margin(epsilon));
 
+    REQUIRE(res3.rotation() == Approx(PI/2).margin(epsilon));
+    REQUIRE(res3.translation().x == Approx(0).margin(epsilon));
+    REQUIRE(res3.translation().y == Approx(4/PI).margin(epsilon));
 
 }
 

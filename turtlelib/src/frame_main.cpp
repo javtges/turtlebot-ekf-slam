@@ -14,12 +14,12 @@ int main(void){
     turtlelib::Vector2D v_b, v_bhat, v_c, v_a, test;
     turtlelib::Twist2D V_a, V_b, V_c;
 
-    cout << "test test" << endl;
-    cin >> test;
-    cout << test + test;
-    cout << test - test;
-    cout << test * 4;
-    cout << 4 * test;
+    // cout << "test test" << endl;
+    // cin >> test;
+    // cout << test + test;
+    // cout << test - test;
+    // cout << test * 4;
+    // cout << 4 * test;
 
     /// Inputting Transform2D objects, and calculating other transfroms from these two
     cout << "Enter transform T_{a,b}:" << endl;
@@ -58,5 +58,10 @@ int main(void){
     cout << "V_a " << V_a;
     cout << "V_b " << V_b;
     cout << "V_c " << V_c;
+    cout << "AAAAA" << endl;
+
+    //  TTest(0);
+    turtlelib::Transform2D TTest = integrate_twist(V_b);
+    cout << TTest;
 
 }

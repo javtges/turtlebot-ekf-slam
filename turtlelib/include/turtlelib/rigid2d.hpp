@@ -189,8 +189,6 @@ namespace turtlelib
         /// \return the angular displacement, in radians
         double rotation() const;
 
-        Transform2D integrate_twist(Twist2D twist);
-
         /// \brief \see operator<<(...) (declared outside this class)
         /// for a description
         friend std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
@@ -220,6 +218,8 @@ namespace turtlelib
     Vector2D operator-(Vector2D lhs, const Vector2D & rhs);
     Vector2D operator*(Vector2D lhs, const double & rhs);
     Vector2D operator*(const double & lhs, Vector2D rhs);
+
+    Transform2D integrate_twist(Twist2D twist);
 
 }
 

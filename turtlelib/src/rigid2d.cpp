@@ -233,29 +233,37 @@ namespace turtlelib{
     }
 
 
-    Transform2D Transform2D::integrate_twist(Twist2D twist){
-        double new_angle;
-        Vector2D new_pos;
-        Transform2D T_adj(0);
-        Twist2D displacement;
+    Transform2D integrate_twist(Twist2D twist){
+        double theta, xs, ys;
+        Vector2D d;
         
-        T_adj.T[0][0] = 1;
-        T_adj.T[1][0] = T[1][2];
-        T_adj.T[2][0] = -1*T[0][2];
-        T_adj.T[0][1] = 0;
-        T_adj.T[1][1] = T[0][0];
-        T_adj.T[2][1] = T[1][0];
-        T_adj.T[0][2] = 0;
-        T_adj.T[1][2] = T[0][1];
-        T_adj.T[2][2] = T[1][1];
 
-        displacement = T_adj(twist);
-        new_angle = displacement.thetadot;
-        new_pos.x = displacement.xdot;
-        new_pos.y = displacement.ydot;
-        
-        Transform2D result(new_pos,new_angle);
-        return result;
+        // theta = thetadot from twist
+        // thetadot * -ys + xdot = 0
+        // thetadot * xs + ydot = 0
+
+        if (twist.thetadot == 0){
+            d.y = twist.ydot;
+            d.x = twist.xdot;
+
+            Transform2D Tbb(d);
+            return Tbb;
+        }
+
+        else {
+            d.x = twist.ydot / twist.thetadot;
+            d.y = -1 * twist.xdot / twist.thetadot; 
+            theta = twist.thetadot;
+
+            Transform2D Tss(rad2deg(theta));
+            Transform2D Tsb(d);
+            Transform2D Tbs = Tsb.inv();
+
+            Transform2D Tbb = (Tbs * Tss) * Tsb;
+
+            return Tbb;
+        }
+
     }
 
     /// \brief multiply two transforms together, returning their composition
