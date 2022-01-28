@@ -226,6 +226,35 @@ TEST_CASE("twist integration", "[Transform2D]"){ // James Avtges
 
 }
 
+TEST_CASE("Integrating a Twist", "[rigid2d]") { // Marco Morales
+    Twist2D twist;
+    Transform2D TbbPrime(0);
+    Vector2D trans;
+    double rot;
+    SECTION( "Testing Both Rotational and Translational components v2" ) {
+        twist.xdot = 1.0;
+        twist.ydot = 2.0;
+        twist.thetadot = PI;
+        TbbPrime = integrate_twist(twist);
+        trans = TbbPrime.translation();
+        rot = TbbPrime.rotation();
+        REQUIRE( trans.x == Approx(-1.27324));
+        REQUIRE( trans.y ==  Approx(0.63662));
+        REQUIRE( rot ==  Approx(PI));
+    }
+
+    SECTION( "Testing Both Rotational and Translational components v3" ) {
+        twist.xdot = 2.0;
+        twist.ydot = 4.0;
+        twist.thetadot = PI;
+        TbbPrime = integrate_twist(twist);
+        trans = TbbPrime.translation();
+        rot = TbbPrime.rotation();
+        REQUIRE( trans.x == Approx(-2.54).margin(0.01));
+        REQUIRE( trans.y ==  Approx(1.272).margin(0.01));
+        REQUIRE( rot ==  Approx(PI));
+    }
+}
 
 ////////////////// TRANSFORM2D ////////////
 
