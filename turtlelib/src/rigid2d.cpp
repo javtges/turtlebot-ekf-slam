@@ -252,7 +252,7 @@ namespace turtlelib{
 
         else {
             d.x = twist.ydot / twist.thetadot;
-            d.y = -1 * twist.xdot / twist.thetadot; 
+            d.y = -1 * twist.xdot / twist.thetadot; // May be an issue
             theta = twist.thetadot;
 
             Transform2D Tss(rad2deg(theta));
