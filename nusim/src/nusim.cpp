@@ -161,7 +161,7 @@ visualization_msgs::MarkerArray addWalls(double x_length, double y_length){
     maTemp.markers[1].pose.orientation.z = 0.0;
     maTemp.markers[1].pose.orientation.w = 1.0;
 
-    maTemp.markers[1].scale.x = x_length;
+    maTemp.markers[1].scale.x = x_length+2*t;
     maTemp.markers[1].scale.y = 0.1;
     maTemp.markers[1].scale.z = 0.25;
 
@@ -175,7 +175,7 @@ visualization_msgs::MarkerArray addWalls(double x_length, double y_length){
     maTemp.markers[2].pose.orientation.w = 1.0;
 
     maTemp.markers[2].scale.x = 0.1;
-    maTemp.markers[2].scale.y = y_length;
+    maTemp.markers[2].scale.y = y_length+2*t;
     maTemp.markers[2].scale.z = 0.25;
 
     // Wall 4
