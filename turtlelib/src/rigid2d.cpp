@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "../include/turtlelib/rigid2d.hpp"
+#include "turtlelib/rigid2d.hpp"
 #include <cmath>
 /// \file
 /// \brief The corresponding cpp file for "rigid2d.hpp", for two-dimensional rigid body transformations.
@@ -234,7 +234,7 @@ namespace turtlelib{
 
 
     Transform2D integrate_twist(Twist2D twist){
-        double theta, xs, ys;
+        double theta;
         Vector2D d;
         
 

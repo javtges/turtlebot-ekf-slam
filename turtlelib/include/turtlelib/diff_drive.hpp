@@ -1,0 +1,69 @@
+#ifndef DIFF_DRIVE_INCLUDE_GUARD_HPP
+#define DIFF_DRIVE_INCLUDE_GUARD_HPP
+
+
+#include <iosfwd>
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include "turtlelib/rigid2d.hpp"
+
+namespace turtlelib
+{
+
+    // constexpr double PI=3.14159265358979323846;
+    constexpr double d = 0.16/2;
+    constexpr double r = 0.033;
+
+    struct Phi{
+        double L = 0.0;
+        double R = 0.0;
+    };
+
+    struct Q {
+        double theta = 0.0;
+        double x = 0.0;
+        double y = 0.0;
+    };
+
+    struct Phidot{
+        double Ldot = 0.0;
+        double Rdot = 0.0;
+    };
+
+    class DiffDrive
+    {
+    private:
+        //private?
+        // std::vector<double> q = {0.0, 0.0, 0.0};
+        // std::vector<double> phi = {0.0, 0.0};
+        Phi phi;
+        Q q;
+        Phidot phidot;
+
+    public:
+        DiffDrive();
+
+        Q forward_kinematics(Q current_config, Phi phi_prime) const;
+
+        Phidot inverse_kinematics(Twist2D twist);
+
+        Phi update_phis(Twist2D twist, Phi angles);
+
+        //public?
+
+        //Compute q
+        // Takes a twist and a wheel radius, finds q
+
+        //Forward kinematics function
+        // Given new wheel positions update the configuration q
+
+        //Inverse kinematics function(twist)
+        // Compute the wheel velocities required to achieve a certain body twist
+
+    };
+
+
+}
+
+#endif
