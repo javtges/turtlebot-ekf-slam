@@ -10,6 +10,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <turtlesim/Pose.h>
 #include "nusim/teleport.h"
 #include <visualization_msgs/MarkerArray.h>
@@ -38,8 +39,8 @@
 static std_msgs::UInt64 ts;
 static sensor_msgs::JointState jointState;
 static geometry_msgs::TransformStamped transformStamped;
-static visualization_msgs::MarkerArray ma;
-static double x, y, theta;
+static visualization_msgs::MarkerArray ma, walls;
+static double x, y, theta, x_length, y_length;
 static double x_0, y_0, theta_0;
 std::vector<double> radii;
 std::vector<double> x_locs;
@@ -70,6 +71,10 @@ bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Respon
     return true;
 }
 
+// void wheelCallback(const nuturtlebot::WheelCommands::ConstPtr& msg){
+//     // Wheel callbacks
+// }
+
 /// \brief Populates a MarkerArray message with the obstacles in the parameter server as specified by the yaml.
 /// \param radii - a vector of the radii for each of the obstacles
 /// \param x_locs - a vector of the x coordinates for each of the obstacles
@@ -86,7 +91,7 @@ visualization_msgs::MarkerArray addObstacles(std::vector<double> radii, std::vec
         maTemp.markers[i].header.frame_id = "world";
         maTemp.markers[i].header.stamp = ros::Time::now();
         maTemp.markers[i].ns = "obstacles";
-        maTemp.markers[i].id = i;
+        maTemp.markers[i].id = i+5;
         maTemp.markers[i].type = visualization_msgs::Marker::CYLINDER;
         maTemp.markers[i].action = visualization_msgs::Marker::ADD;
 
@@ -112,6 +117,84 @@ visualization_msgs::MarkerArray addObstacles(std::vector<double> radii, std::vec
 
 }
 
+visualization_msgs::MarkerArray addWalls(double x_length, double y_length){
+
+    int l = 4;
+    double t = 0.1;
+    visualization_msgs::MarkerArray maTemp;
+    maTemp.markers.resize(4);
+
+    for (int i=0; i<l; i++){
+        
+        maTemp.markers[i].header.frame_id = "world";
+        maTemp.markers[i].header.stamp = ros::Time::now();
+        maTemp.markers[i].ns = "walls";
+        maTemp.markers[i].id = i;
+        maTemp.markers[i].type = visualization_msgs::Marker::CUBE;
+        maTemp.markers[i].action = visualization_msgs::Marker::ADD;
+        maTemp.markers[i].color.r = 1.0;
+        maTemp.markers[i].color.g = 0.0;
+        maTemp.markers[i].color.b = 0.0;
+        maTemp.markers[i].color.a = 1.0;
+        maTemp.markers[i].lifetime = ros::Duration(0);
+    }
+
+    // Wall 1
+    maTemp.markers[0].pose.position.x = (x_length/2) + (t/2);
+    maTemp.markers[0].pose.position.z = 0.25/2;
+    maTemp.markers[0].pose.position.y = 0;
+    maTemp.markers[0].pose.orientation.x = 0.0;
+    maTemp.markers[0].pose.orientation.y = 0.0;
+    maTemp.markers[0].pose.orientation.z = 0.0;
+    maTemp.markers[0].pose.orientation.w = 1.0;
+
+    maTemp.markers[0].scale.x = 0.1;
+    maTemp.markers[0].scale.y = y_length;
+    maTemp.markers[0].scale.z = 0.25;
+    
+    // Wall 2
+    maTemp.markers[1].pose.position.x = 0;
+    maTemp.markers[1].pose.position.z = 0.25/2;
+    maTemp.markers[1].pose.position.y = -(y_length/2) - (t/2);
+    maTemp.markers[1].pose.orientation.x = 0.0;
+    maTemp.markers[1].pose.orientation.y = 0.0;
+    maTemp.markers[1].pose.orientation.z = 0.0;
+    maTemp.markers[1].pose.orientation.w = 1.0;
+
+    maTemp.markers[1].scale.x = x_length;
+    maTemp.markers[1].scale.y = 0.1;
+    maTemp.markers[1].scale.z = 0.25;
+
+    // Wall 3
+    maTemp.markers[2].pose.position.x = -(x_length/2) - (t/2);
+    maTemp.markers[2].pose.position.z = 0.25/2;
+    maTemp.markers[2].pose.position.y = 0;
+    maTemp.markers[2].pose.orientation.x = 0.0;
+    maTemp.markers[2].pose.orientation.y = 0.0;
+    maTemp.markers[2].pose.orientation.z = 0.0;
+    maTemp.markers[2].pose.orientation.w = 1.0;
+
+    maTemp.markers[2].scale.x = 0.1;
+    maTemp.markers[2].scale.y = y_length;
+    maTemp.markers[2].scale.z = 0.25;
+
+    // Wall 4
+    maTemp.markers[3].pose.position.x = 0;
+    maTemp.markers[3].pose.position.z = 0.25/2;
+    maTemp.markers[3].pose.position.y = (y_length/2) + (t/2);
+    maTemp.markers[3].pose.orientation.x = 0.0;
+    maTemp.markers[3].pose.orientation.y = 0.0;
+    maTemp.markers[3].pose.orientation.z = 0.0;
+    maTemp.markers[3].pose.orientation.w = 1.0;
+
+    maTemp.markers[3].scale.x = x_length;
+    maTemp.markers[3].scale.y = 0.1;
+    maTemp.markers[3].scale.z = 0.25;
+
+    return maTemp;
+
+}
+
 /// The main function and loop.
 int main(int argc, char * argv[])
 {
@@ -126,16 +209,25 @@ int main(int argc, char * argv[])
     nh.param("x0", x_0, 0.0);
     nh.param("y0", y_0, 0.0);
     nh.param("theta0", theta_0, 0.0);
+    nh.param("x_length", x_length, 10.0);
+    nh.param("y_length", y_length, 10.0);
 
     nh.getParam("radii", radii);
     nh.getParam("x_pos", x_locs);
     nh.getParam("y_pos", y_locs);
 
     /// Setting up the looping rate and the required subscribers.
-    ros::Rate r(frequency);
+    ros::Rate r(frequency); 
     ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("timestep", frequency);
     ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("/red/joint_states",10);
-    ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true);
+    ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
+    ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
+    ros::Publisher wheel_cmd_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel",100); 
+    
+    
+    // ros::Publisher sensor_data_pub = nh.advertise<nuturtlebot::WheelCommands>("/red/sensor_data",100);
+    // ros::Subscriber wheel_cmd_sub = n.subscribe("/red/wheel_cmd",100, wheelCallback);
+
 
     /// Setting up the services, and the robot's initial location.
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
@@ -146,7 +238,9 @@ int main(int argc, char * argv[])
 
     /// Populating the MarkerArray message and publishing it to display the markers.
     ma = addObstacles(radii, x_locs, y_locs);
-    marker_pub.publish(ma);
+    walls = addWalls(x_length, y_length);
+    obs_pub.publish(ma);
+    wall_pub.publish(walls);
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
@@ -177,6 +271,9 @@ int main(int argc, char * argv[])
         br.sendTransform(transformStamped);
         joint_state_pub.publish(jointState);
         ts_pub.publish(ts);
+
+        // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
+        // Use forward kinematics from DiffDrive to update the position of the robot
 
         /// Increment the timestamp, spin, and sleep for the 500Hz delay.
         ts.data++;

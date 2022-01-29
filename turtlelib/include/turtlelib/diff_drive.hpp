@@ -44,11 +44,13 @@ namespace turtlelib
     public:
         DiffDrive();
 
-        Q forward_kinematics(Q current_config, Phi phi_prime) const;
+        Q forward_kinematics(Q current_config, Twist2D twist) const;
 
         Phidot inverse_kinematics(Twist2D twist);
 
         Phi update_phis(Twist2D twist, Phi angles);
+
+        Q update_config(Q old_config, Phi old_phi, Phi new_phi);
 
         //public?
 

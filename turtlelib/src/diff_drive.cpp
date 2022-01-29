@@ -7,7 +7,8 @@
 
 namespace turtlelib{
 
-    Q DiffDrive::forward_kinematics(Q current_config, Phi phi_prime) const{
+    Q DiffDrive::forward_kinematics(Q current_config, Twist2D twist) const{
+        // Given a twist and an old Q, make a new Q
 
     }
 
@@ -15,6 +16,10 @@ namespace turtlelib{
         Phidot output;
         output.Ldot = ((-0.08)*twist.thetadot + twist.xdot)/0.033;
         output.Rdot = ((0.08)*twist.thetadot + twist.xdot)/0.033;
+
+        if (twist.ydot != 0.0){
+            throw std::logic_error("Invalid Twist!");
+        }
 
         return output; //this goes to cmd_vel I guess?
     }

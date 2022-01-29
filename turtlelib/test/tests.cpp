@@ -18,8 +18,8 @@ TEST_CASE("istream Vector input","[Vector2D]"){ // James Avtges
     number.str("1 1");
     bracket >> bracketV;
     number >> numberV;
-    REQUIRE(bracketV.x == 1);
-    REQUIRE(numberV.x == 1);
+    CHECK(bracketV.x == 1);
+    CHECK(numberV.x == 1);
 }
 
 TEST_CASE("ostream Vector output","[Vector2D]"){ // James Avtges
@@ -30,7 +30,7 @@ TEST_CASE("ostream Vector output","[Vector2D]"){ // James Avtges
 
     vectorOut << vector;
 
-    REQUIRE(vectorOut.str() == "[9 1]\n");
+    CHECK(vectorOut.str() == "[9 1]\n");
 }
 
 TEST_CASE("istream Twist input","[Twist2D]"){ // James Avtges
@@ -42,8 +42,8 @@ TEST_CASE("istream Twist input","[Twist2D]"){ // James Avtges
     number.str("1 2 3");
     bracket >> bracketT;
     number >> numberT;
-    REQUIRE(bracketT.xdot == 2);
-    REQUIRE(numberT.xdot == 2);
+    CHECK(bracketT.xdot == 2);
+    CHECK(numberT.xdot == 2);
 }
 
 TEST_CASE("ostream Twist output","[Twist2D]"){ // James Avtges
@@ -55,7 +55,7 @@ TEST_CASE("ostream Twist output","[Twist2D]"){ // James Avtges
 
     twistOut << twist;
 
-    REQUIRE(twistOut.str() == "[10 5 4]\n");
+    CHECK(twistOut.str() == "[10 5 4]\n");
 }
 
 TEST_CASE("istream Transform input","[Transform2D]"){ // James Avtges
@@ -66,9 +66,9 @@ TEST_CASE("istream Transform input","[Transform2D]"){ // James Avtges
     
     Vector2D translation = T.translation();
     double rotation = rad2deg(T.rotation());
-    REQUIRE(translation.x == 2);
-    REQUIRE(translation.y == 4);
-    REQUIRE(rotation == 80);
+    CHECK(translation.x == 2);
+    CHECK(translation.y == 4);
+    CHECK(rotation == 80);
 }
 
 TEST_CASE("ostream Transform output","[Transform2D]"){ // James Avtges
@@ -81,7 +81,7 @@ TEST_CASE("ostream Transform output","[Transform2D]"){ // James Avtges
 
     transformOut << T;
 
-    REQUIRE(transformOut.str() == "deg: 6.1 x: 3.2 y: 4\n");
+    CHECK(transformOut.str() == "deg: 6.1 x: 3.2 y: 4\n");
 }
 
 /* TESTS FROM ANNA */
@@ -100,9 +100,9 @@ TEST_CASE("constructor_all", "[transform]") { // Anna Garverick
 
     double d = rad2deg(r_out);
 
-    REQUIRE(t_out.x == 1);
-    REQUIRE(t_out.y == 2);
-    REQUIRE(d == 90);
+    CHECK(t_out.x == 1);
+    CHECK(t_out.y == 2);
+    CHECK(d == 90);
 } 
 
 TEST_CASE("constructor_trans", "[transform]") { // Anna Garverick
@@ -117,9 +117,9 @@ TEST_CASE("constructor_trans", "[transform]") { // Anna Garverick
 
     double d = rad2deg(r_out);
 
-    REQUIRE(t_out.x == 1);
-    REQUIRE(t_out.y == 2);
-    REQUIRE(d == 0);
+    CHECK(t_out.x == 1);
+    CHECK(t_out.y == 2);
+    CHECK(d == 0);
 }
 
 TEST_CASE("constructor_rot", "[transform]") { // Anna Garverick
@@ -132,9 +132,9 @@ TEST_CASE("constructor_rot", "[transform]") { // Anna Garverick
 
     double d = rad2deg(r_out);
 
-    REQUIRE(t_out.x == 0);
-    REQUIRE(t_out.y == 0);
-    REQUIRE(d == 90);
+    CHECK(t_out.x == 0);
+    CHECK(t_out.y == 0);
+    CHECK(d == 90);
 }
 TEST_CASE("inv", "[inverse]") { // Anna Garverick
     Vector2D v;
@@ -151,9 +151,9 @@ TEST_CASE("inv", "[inverse]") { // Anna Garverick
     Vector2D t_out = T_inv.translation();
     double r_out = T_inv.rotation();
 
-    REQUIRE(t_out.x == Approx(-2.121).margin(.01));
-    REQUIRE(t_out.y == Approx(-0.7071).margin(.01));
-    REQUIRE(r_out == Approx(-1*PI/4).margin(.01));
+    CHECK(t_out.x == Approx(-2.121).margin(.01));
+    CHECK(t_out.y == Approx(-0.7071).margin(.01));
+    CHECK(r_out == Approx(-1*PI/4).margin(.01));
 }
 
 TEST_CASE("trans", "[translation]") { //Anna Garverick
@@ -165,8 +165,8 @@ TEST_CASE("trans", "[translation]") { //Anna Garverick
 
     Vector2D t_out = T.translation();
 
-    REQUIRE(t_out.x == 5);
-    REQUIRE(t_out.y == 10);
+    CHECK(t_out.x == 5);
+    CHECK(t_out.y == 10);
 }
 
 TEST_CASE("rot", "[rotation]") { //Anna Garverick
@@ -178,7 +178,7 @@ TEST_CASE("rot", "[rotation]") { //Anna Garverick
 
     double d = rad2deg(r_out);
 
-    REQUIRE(d == Approx(33).margin(.001));
+    CHECK(d == Approx(33).margin(.001));
 }
 
 
@@ -187,18 +187,18 @@ TEST_CASE("normalize"){ // Cody Nichoson
     v_in.x = 1; 
     v_in.y = 1;
     v_out = normalize(v_in);
-    REQUIRE(v_out.x == Approx(0.707).margin(0.001));
-    REQUIRE(v_out.y == Approx(0.707).margin(0.001));
+    CHECK(v_out.x == Approx(0.707).margin(0.001));
+    CHECK(v_out.y == Approx(0.707).margin(0.001));
 }
 
 TEST_CASE("normalize_angle", "[Transform2D]"){ // James Avtges
-    REQUIRE(normalize_angle(PI) == Approx(PI).margin(0.001));
-    REQUIRE(normalize_angle(-1*PI) == Approx(PI).margin(0.001));
-    REQUIRE(normalize_angle((-1*PI)+0.0001) == Approx((-1*PI)+0.0001).margin(0.001));
-    REQUIRE(normalize_angle(0) == Approx(0).margin(0.001));
-    REQUIRE(normalize_angle(-1*PI/4) == Approx(-1*PI/4).margin(0.001));
-    REQUIRE(normalize_angle(3*PI/2) == Approx(-1*PI/2).margin(0.001));
-    REQUIRE(normalize_angle(-5*PI/2) == Approx(-1*PI/2).margin(0.001));
+    CHECK(normalize_angle(PI) == Approx(PI).margin(0.001));
+    CHECK(normalize_angle(-1*PI) == Approx(PI).margin(0.001));
+    CHECK(normalize_angle((-1*PI)+0.0001) == Approx((-1*PI)+0.0001).margin(0.001));
+    CHECK(normalize_angle(0) == Approx(0).margin(0.001));
+    CHECK(normalize_angle(-1*PI/4) == Approx(-1*PI/4).margin(0.001));
+    CHECK(normalize_angle(3*PI/2) == Approx(-1*PI/2).margin(0.001));
+    CHECK(normalize_angle(-5*PI/2) == Approx(-1*PI/2).margin(0.001));
 }
 
 TEST_CASE("twist integration", "[Transform2D]"){ // James Avtges
@@ -215,14 +215,14 @@ TEST_CASE("twist integration", "[Transform2D]"){ // James Avtges
     res2 = integrate_twist(translation);
     res3 = integrate_twist(both);
 
-    REQUIRE(res1.rotation() == Approx(PI/2).margin(epsilon));
+    CHECK(res1.rotation() == Approx(PI/2).margin(epsilon));
 
-    REQUIRE(res2.translation().x == Approx(3).margin(epsilon));
-    REQUIRE(res2.translation().y == Approx(2).margin(epsilon));
+    CHECK(res2.translation().x == Approx(3).margin(epsilon));
+    CHECK(res2.translation().y == Approx(2).margin(epsilon));
 
-    REQUIRE(res3.rotation() == Approx(PI/2).margin(epsilon));
-    REQUIRE(res3.translation().x == Approx(0).margin(epsilon));
-    REQUIRE(res3.translation().y == Approx(4/PI).margin(epsilon));
+    CHECK(res3.rotation() == Approx(PI/2).margin(epsilon));
+    CHECK(res3.translation().x == Approx(0).margin(epsilon));
+    CHECK(res3.translation().y == Approx(4/PI).margin(epsilon));
 
 }
 
@@ -238,9 +238,9 @@ TEST_CASE("Integrating a Twist", "[rigid2d]") { // Marco Morales
         TbbPrime = integrate_twist(twist);
         trans = TbbPrime.translation();
         rot = TbbPrime.rotation();
-        REQUIRE( trans.x == Approx(-1.27324));
-        REQUIRE( trans.y ==  Approx(0.63662));
-        REQUIRE( rot ==  Approx(PI));
+        CHECK( trans.x == Approx(-1.27324));
+        CHECK( trans.y ==  Approx(0.63662));
+        CHECK( rot ==  Approx(PI));
     }
 
     SECTION( "Testing Both Rotational and Translational components v3" ) {
@@ -250,9 +250,9 @@ TEST_CASE("Integrating a Twist", "[rigid2d]") { // Marco Morales
         TbbPrime = integrate_twist(twist);
         trans = TbbPrime.translation();
         rot = TbbPrime.rotation();
-        REQUIRE( trans.x == Approx(-2.54).margin(0.01));
-        REQUIRE( trans.y ==  Approx(1.272).margin(0.01));
-        REQUIRE( rot ==  Approx(PI));
+        CHECK( trans.x == Approx(-2.54).margin(0.01));
+        CHECK( trans.y ==  Approx(1.272).margin(0.01));
+        CHECK( rot ==  Approx(PI));
     }
 }
 
@@ -273,9 +273,9 @@ TEST_CASE("Transform2D::operator*=, Self Reference", "[Transform2D]") // RKS
     double res_ang = T_id.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*=, Identity Mul", "[Transform2D]") //RKS
@@ -293,9 +293,9 @@ TEST_CASE("Transform2D::operator*=, Identity Mul", "[Transform2D]") //RKS
     double res_ang = T_id.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 
@@ -315,9 +315,9 @@ TEST_CASE("Transform2D::operator*=, Cancelling Rotations", "[Transform2D]") //RK
     double res_ang = T_a.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*=, Cancelling Transitions", "[Transform2D]") // RKS
@@ -337,9 +337,9 @@ TEST_CASE("Transform2D::operator*=, Cancelling Transitions", "[Transform2D]") //
     double res_ang = T_a.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*=, Only Transitions", "[Transform2D]") // RKS
@@ -359,9 +359,9 @@ TEST_CASE("Transform2D::operator*=, Only Transitions", "[Transform2D]") // RKS
     double res_ang = T_a.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*=, Basic Transformation", "[Transform2D]") // RKS
@@ -386,9 +386,9 @@ TEST_CASE("Transform2D::operator*=, Basic Transformation", "[Transform2D]") // R
     double res_ang = T_a.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( ang_ans ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_ang == Approx( ang_ans ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*=, Big Rotation", "[Transform2D]") // RKS
@@ -413,9 +413,9 @@ TEST_CASE("Transform2D::operator*=, Big Rotation", "[Transform2D]") // RKS
     double res_ang = std::fmod(T_a.rotation(), 2.0*PI);
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( ang_ans ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_ang == Approx( ang_ans ).margin(epsilon));
 }
 
 
@@ -436,9 +436,9 @@ TEST_CASE("Transform2D::operator*, Identity Mul", "[Transform2D]") // RKS
     double res_ang = T_id3.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 
@@ -458,9 +458,9 @@ TEST_CASE("Transform2D::operator*, Cancelling Rotations", "[Transform2D]") // RK
     double res_ang = T_c.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*, Cancelling Transitions", "[Transform2D]") // RKS
@@ -480,9 +480,9 @@ TEST_CASE("Transform2D::operator*, Cancelling Transitions", "[Transform2D]") // 
     double res_ang = T_c.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*, Only Transitions", "[Transform2D]") // RKS
@@ -502,9 +502,9 @@ TEST_CASE("Transform2D::operator*, Only Transitions", "[Transform2D]") // RKS
     double res_ang = T_c.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_id.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_id.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( 0.0 ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_id.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_id.y ).margin(epsilon));
+    CHECK(res_ang == Approx( 0.0 ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator*, Basic Transformation", "[Transform2D]") // RKS
@@ -529,9 +529,9 @@ TEST_CASE("Transform2D::operator*, Basic Transformation", "[Transform2D]") // RK
     double res_ang = T_c.rotation();
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( ang_ans ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_ang == Approx( ang_ans ).margin(epsilon));
 }
 
 
@@ -558,9 +558,9 @@ TEST_CASE("Transform2D::operator*, Big Rotation", "[Transform2D]") // RKS
     double res_ang = std::fmod(T_c.rotation(), 2.0*PI);
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
-    REQUIRE(res_ang == Approx( ang_ans ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_ang == Approx( ang_ans ).margin(epsilon));
 }
 
 /// TEST operator()(Vector2D) ///
@@ -578,8 +578,8 @@ TEST_CASE("Transform2D::operator(Vector), Idenity Transform", "[Transform2D]") /
     Vector2D res_vec = T_ab(vec_b);
 
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator(Vector), Simple Rotation", "[Transform2D]") // RKS
@@ -595,8 +595,8 @@ TEST_CASE("Transform2D::operator(Vector), Simple Rotation", "[Transform2D]") // 
     Vector2D res_vec = T_ab(vec_b);
     
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator(Vector), Simple Translation", "[Transform2D]") // RKS
@@ -613,8 +613,8 @@ TEST_CASE("Transform2D::operator(Vector), Simple Translation", "[Transform2D]") 
     Vector2D res_vec = T_ab(vec_b);
     
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator(Vector), Simple Transformation", "[Transform2D]") // RKS
@@ -631,8 +631,8 @@ TEST_CASE("Transform2D::operator(Vector), Simple Transformation", "[Transform2D]
     Vector2D res_vec = T_ab(vec_b);
     
     // Tests
-    REQUIRE(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
-    REQUIRE(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
+    CHECK(res_vec.x == Approx( vec_ans.x ).margin(epsilon));
+    CHECK(res_vec.y == Approx( vec_ans.y ).margin(epsilon));
 }
 
 /// TEST operator()(Twist2D) ///
@@ -650,9 +650,9 @@ TEST_CASE("Transform2D::operator(Twist2D), Idenity Transform", "[Transform2D]") 
     Twist2D res_twt = T_ab(twt_b);
 
     // Tests
-    REQUIRE(res_twt.thetadot == Approx ( twt_ans.thetadot).margin(epsilon));
-    REQUIRE(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
-    REQUIRE(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
+    CHECK(res_twt.thetadot == Approx ( twt_ans.thetadot).margin(epsilon));
+    CHECK(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
+    CHECK(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator(Twist2D), Simple Rotation", "[Transform2D]") // RKS
@@ -668,9 +668,9 @@ TEST_CASE("Transform2D::operator(Twist2D), Simple Rotation", "[Transform2D]") //
     Twist2D res_twt = T_ab(twt_b);
 
     // Tests
-    REQUIRE(res_twt.thetadot == Approx ( twt_ans.thetadot).margin(epsilon));
-    REQUIRE(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
-    REQUIRE(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
+    CHECK(res_twt.thetadot == Approx ( twt_ans.thetadot).margin(epsilon));
+    CHECK(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
+    CHECK(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator(Twist2D), Simple Translation", "[Transform2D]") // RKS
@@ -688,9 +688,9 @@ TEST_CASE("Transform2D::operator(Twist2D), Simple Translation", "[Transform2D]")
     std::cout << res_twt;
 
     // Tests
-    REQUIRE(res_twt.thetadot == Approx ( (twt_ans.thetadot)).margin(epsilon));
-    REQUIRE(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
-    REQUIRE(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
+    CHECK(res_twt.thetadot == Approx ( (twt_ans.thetadot)).margin(epsilon));
+    CHECK(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
+    CHECK(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
 }
 
 TEST_CASE("Transform2D::operator(Twist2D), Simple Transformation", "[Transform2D]") // RKS
@@ -707,7 +707,7 @@ TEST_CASE("Transform2D::operator(Twist2D), Simple Transformation", "[Transform2D
     Twist2D res_twt = T_ab(twt_b);
 
     // Tests
-    REQUIRE(res_twt.thetadot == Approx ( (twt_ans.thetadot)).margin(epsilon));
-    REQUIRE(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
-    REQUIRE(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
+    CHECK(res_twt.thetadot == Approx ( (twt_ans.thetadot)).margin(epsilon));
+    CHECK(res_twt.xdot == Approx( twt_ans.xdot ).margin(epsilon));
+    CHECK(res_twt.ydot == Approx( twt_ans.ydot ).margin(epsilon));
 }
