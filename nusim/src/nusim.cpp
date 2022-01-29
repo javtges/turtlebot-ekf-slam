@@ -246,11 +246,11 @@ int main(int argc, char * argv[])
     while(ros::ok())
     {
         /// Creates a JointState message for the wheels.
-        jointState.header.stamp = ros::Time::now();
-        jointState.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
-        jointState.position = {0.0, 0.0};
-        jointState.velocity = {0.0, 0.0};
-        jointState.effort = {0.0, 0.0};
+        // jointState.header.stamp = ros::Time::now();
+        // jointState.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
+        // jointState.position = {0.0, 0.0};
+        // jointState.velocity = {0.0, 0.0};
+        // jointState.effort = {0.0, 0.0};
 
         /// Set up a tf2 broadcaster to define the postion of the turtlebot.
         static tf2_ros::TransformBroadcaster br;
@@ -269,7 +269,7 @@ int main(int argc, char * argv[])
 
         /// Send the transform and publish the JointState and the timestamp message.
         br.sendTransform(transformStamped);
-        joint_state_pub.publish(jointState);
+        // joint_state_pub.publish(jointState);
         ts_pub.publish(ts);
 
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
