@@ -19,5 +19,7 @@
         <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
     </group>
 
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
 
 </launch>

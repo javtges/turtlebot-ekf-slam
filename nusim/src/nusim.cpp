@@ -15,6 +15,11 @@
 #include "nusim/teleport.h"
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
+#include <nuturtlebot_msgs/SensorData.h>
+#include <nuturtlebot_msgs/WheelCommands.h>
+#include "turtlelib/rigid2d.hpp"
+#include "turtlelib/diff_drive.hpp"
+
 
 /// \file
 /// \brief Displays a red turtlebot in rviz, with obstacles in its vicinity.
@@ -40,11 +45,18 @@ static std_msgs::UInt64 ts;
 static sensor_msgs::JointState jointState;
 static geometry_msgs::TransformStamped transformStamped;
 static visualization_msgs::MarkerArray ma, walls;
+static nuturtlebot_msgs::SensorData sensor_data;
 static double x, y, theta, x_length, y_length;
 static double x_0, y_0, theta_0;
+static double left_velocity, right_velocity;
+static double motor_cmd_to_radsec, encoder_ticks_to_rad;
 std::vector<double> radii;
 std::vector<double> x_locs;
 std::vector<double> y_locs;
+std::vector<double> motor_cmd_max;
+turtlelib::Phi wheel_angles;
+turtlelib::Phidot wheel_speeds;
+turtlelib::Q turtle_config;
 
 
 /// \brief The callback function for the reset service. Resets the timestamp counter and teleports the turtlebot back to its starting pose.
@@ -71,9 +83,21 @@ bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Respon
     return true;
 }
 
-// void wheelCallback(const nuturtlebot::WheelCommands::ConstPtr& msg){
-//     // Wheel callbacks
-// }
+void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
+    left_velocity = msg->left_velocity;
+    right_velocity = msg->right_velocity;
+
+    wheel_speeds.Ldot = left_velocity;
+    wheel_speeds.Rdot = right_velocity;
+}
+
+int toEncoderTicks(double radians){
+    return (int)(radians/encoder_ticks_to_rad) % 4096;
+}
+
+double toRadians(int ticks){
+    return ticks * encoder_ticks_to_rad;
+}
 
 /// \brief Populates a MarkerArray message with the obstacles in the parameter server as specified by the yaml.
 /// \param radii - a vector of the radii for each of the obstacles
@@ -215,6 +239,9 @@ int main(int argc, char * argv[])
     nh.getParam("radii", radii);
     nh.getParam("x_pos", x_locs);
     nh.getParam("y_pos", y_locs);
+    n.getParam("motor_cmd_to_radsec", motor_cmd_to_radsec);
+    n.getParam("motor_cmd_to_radsec", encoder_ticks_to_rad);
+    n.getParam("motor_cmd_to_radsec", motor_cmd_max);
 
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
@@ -222,12 +249,10 @@ int main(int argc, char * argv[])
     ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("/red/joint_states",10);
     ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
-    ros::Publisher wheel_cmd_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel",100); 
     
     
-    // ros::Publisher sensor_data_pub = nh.advertise<nuturtlebot::WheelCommands>("/red/sensor_data",100);
-    // ros::Subscriber wheel_cmd_sub = n.subscribe("/red/wheel_cmd",100, wheelCallback);
-
+    ros::Publisher sensor_data_pub = nh.advertise<nuturtlebot_msgs::SensorData>("/red/sensor_data",100);
+    ros::Subscriber wheel_cmd_sub = n.subscribe("/red/wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
@@ -235,6 +260,12 @@ int main(int argc, char * argv[])
 
     x = x_0; y = y_0; theta = theta_0;
     ts.data = 0;
+    wheel_angles.L = 0.0;
+    wheel_angles.R = 0.0;
+    turtle_config.theta = theta_0;
+    turtle_config.x = x_0;
+    turtle_config.y = y_0;
+    turtlelib::DiffDrive drive;
 
     /// Populating the MarkerArray message and publishing it to display the markers.
     ma = addObstacles(radii, x_locs, y_locs);
@@ -272,7 +303,18 @@ int main(int argc, char * argv[])
         // joint_state_pub.publish(jointState);
         ts_pub.publish(ts);
 
+
+
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
+        // Convert ticks to radians/second, use the frequency to determine how far the wheels turn during that time
+        sensor_data.left_encoder = toEncoderTicks((left_velocity*motor_cmd_to_radsec/frequency) + wheel_angles.L);
+        sensor_data.right_encoder = toEncoderTicks((right_velocity*motor_cmd_to_radsec/frequency) + wheel_angles.R);
+        sensor_data_pub.publish(sensor_data);
+
+        turtle_config = drive.forward_kinematics(turtle_config, wheel_speeds);
+
+        
+        
         // Use forward kinematics from DiffDrive to update the position of the robot
 
         /// Increment the timestamp, spin, and sleep for the 500Hz delay.

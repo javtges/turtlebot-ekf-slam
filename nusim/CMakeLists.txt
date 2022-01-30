@@ -155,7 +155,7 @@ add_executable(
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
+  ${catkin_LIBRARIES} turtlelib
 )
 
 #############

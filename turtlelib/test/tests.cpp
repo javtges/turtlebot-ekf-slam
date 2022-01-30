@@ -1,5 +1,6 @@
 #include <catch_ros/catch.hpp>
 #include <turtlelib/rigid2d.hpp>
+#include "turtlelib/diff_drive.hpp"
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
@@ -7,6 +8,100 @@
 
 using namespace turtlelib;
 static const double epsilon = 1.0e-4;
+
+
+TEST_CASE("moving forward, forward kinematics", "[DiffDrive]"){ //James Avtges
+    
+    DiffDrive drive;
+    Q zero_config;
+    zero_config.x = 0;
+    zero_config.y = 0;
+    zero_config.theta = 0;
+    Q result_config;
+
+    Phi prev_angle;
+    prev_angle.L = 0;
+    prev_angle.R = 0;
+
+    Phi next_angle;
+    next_angle.L = PI/4;
+    next_angle.R = PI/4;
+
+    result_config = drive.forward_kinematics(zero_config, prev_angle, next_angle);
+    CHECK(result_config.theta == Approx(0).margin(0.01));
+    CHECK(result_config.x == Approx(0.033 * PI/4).margin(0.01));
+    CHECK(result_config.y == Approx(0).margin(0.01));
+
+}
+
+TEST_CASE("moving forward, inverse kinematics", "[DiffDrive]"){ //James Avtges
+    
+    DiffDrive drive;
+    Q zero_config;
+    zero_config.x = 0;
+    zero_config.y = 0;
+    zero_config.theta = 0;
+    Q result_config;
+
+    Twist2D twist;
+    twist.xdot = 1;
+    twist.ydot = 0;
+    twist.thetadot = 0;
+
+    Phidot dd;
+
+    dd = drive.inverse_kinematics(twist);
+    CHECK(dd.Ldot == Approx(1/0.033).margin(0.01));
+    CHECK(dd.Rdot == Approx(1/0.033).margin(0.01));
+
+}
+
+
+TEST_CASE("impossible twist, inverse kinematics", "[DiffDrive]"){ //James Avtges
+    
+    DiffDrive drive;
+    Q zero_config;
+    zero_config.x = 0;
+    zero_config.y = 0;
+    zero_config.theta = 0;
+    Q result_config;
+
+    Twist2D twist;
+    twist.xdot = 0;
+    twist.ydot = 1;
+    twist.thetadot = 0;
+
+    Phidot dd;
+    
+    CHECK_THROWS_AS(drive.inverse_kinematics(twist),std::logic_error);
+
+}
+
+
+TEST_CASE("moving forward and turning", "[DiffDrive]"){ //James Avtges
+    Twist2D twist;
+    twist.xdot = 1;
+    twist.ydot = 0;
+    twist.thetadot = PI/2;
+    DiffDrive drive;
+    Q zero_config;
+    zero_config.x = 0;
+    zero_config.y = 0;
+    zero_config.theta = 0;
+    Q result_config;
+
+    Phidot dd;
+
+    dd = drive.inverse_kinematics(twist);
+    CHECK(dd.Ldot == Approx(26.495).margin(0.01));
+    CHECK(dd.Rdot == Approx(34.111).margin(0.01));
+
+    result_config = drive.forward_kinematics(zero_config, twist);
+    CHECK(result_config.theta == Approx(PI/2).margin(0.01));
+    CHECK(result_config.x == Approx(0.6366).margin(0.01));
+    CHECK(result_config.y == Approx(0.6366).margin(0.01));
+
+}
 
 
 TEST_CASE("istream Vector input","[Vector2D]"){ // James Avtges

@@ -44,13 +44,16 @@ namespace turtlelib
     public:
         DiffDrive();
 
-        Q forward_kinematics(Q current_config, Twist2D twist) const;
+        Q forward_kinematics(Q current_config, Twist2D twist);
+
+        Q forward_kinematics(Q current_config, Phidot wheel_speeds);
+        
+        Q forward_kinematics(Q current_config, Phi prev_angle, Phi next_angle);
 
         Phidot inverse_kinematics(Twist2D twist);
 
         Phi update_phis(Twist2D twist, Phi angles);
 
-        Q update_config(Q old_config, Phi old_phi, Phi new_phi);
 
         //public?
 
@@ -64,7 +67,6 @@ namespace turtlelib
         // Compute the wheel velocities required to achieve a certain body twist
 
     };
-
 
 }
 
