@@ -72,15 +72,62 @@ TEST_CASE("impossible twist, inverse kinematics", "[DiffDrive]"){ //James Avtges
     twist.thetadot = 0;
 
     Phidot dd;
-    
+
     CHECK_THROWS_AS(drive.inverse_kinematics(twist),std::logic_error);
 
 }
 
+TEST_CASE("turning in place, forward kinematics", "[DiffDrive]"){ //James Avtges
+    
+    DiffDrive drive;
+    Q zero_config;
+    zero_config.x = 0;
+    zero_config.y = 0;
+    zero_config.theta = 0;
+    Q result_config;
 
-TEST_CASE("moving forward and turning", "[DiffDrive]"){ //James Avtges
+    Phi prev_angle;
+    prev_angle.L = 0;
+    prev_angle.R = 0;
+
+    Phi next_angle;
+    next_angle.L = PI/4;
+    next_angle.R = -PI/4;
+
+    result_config = drive.forward_kinematics(zero_config, prev_angle, next_angle);
+    CHECK(result_config.theta == Approx(-0.033*PI/4 / 0.08).margin(0.01));
+    CHECK(result_config.x == Approx(0).margin(0.01));
+    CHECK(result_config.y == Approx(0).margin(0.01));
+
+}
+
+TEST_CASE("turning in place, inverse kinematics", "[DiffDrive]"){ //James Avtges
+    
+    DiffDrive drive;
+    Q zero_config;
+    zero_config.x = 0;
+    zero_config.y = 0;
+    zero_config.theta = 0;
+    Q result_config;
+
     Twist2D twist;
-    twist.xdot = 1;
+    twist.xdot = 0;
+    twist.ydot = 0;
+    twist.thetadot = -0.033*PI/4 / 0.08;
+
+    Phidot dd;
+
+    dd = drive.inverse_kinematics(twist);
+
+    CHECK(dd.Ldot == Approx(PI/4).margin(0.01));
+    CHECK(dd.Rdot == Approx(-PI/4).margin(0.01));
+
+}
+
+
+TEST_CASE("moving forward and turning, forward and inverse kinematics", "[DiffDrive]"){ //James Avtges
+    Twist2D twist;
+    twist.xdot = PI/4;
     twist.ydot = 0;
     twist.thetadot = PI/2;
     DiffDrive drive;
@@ -92,14 +139,19 @@ TEST_CASE("moving forward and turning", "[DiffDrive]"){ //James Avtges
 
     Phidot dd;
 
+    double rvel, lvel;
+
+    rvel = PI/2 * (0.5+0.08)/0.033;
+    lvel = PI/2 * (0.5-0.08)/0.033;
+
     dd = drive.inverse_kinematics(twist);
-    CHECK(dd.Ldot == Approx(26.495).margin(0.01));
-    CHECK(dd.Rdot == Approx(34.111).margin(0.01));
+    CHECK(dd.Ldot == Approx(lvel).margin(0.01));
+    CHECK(dd.Rdot == Approx(rvel).margin(0.01));
 
     result_config = drive.forward_kinematics(zero_config, twist);
     CHECK(result_config.theta == Approx(PI/2).margin(0.01));
-    CHECK(result_config.x == Approx(0.6366).margin(0.01));
-    CHECK(result_config.y == Approx(0.6366).margin(0.01));
+    CHECK(result_config.x == Approx(0.5).margin(0.01));
+    CHECK(result_config.y == Approx(0.5).margin(0.01));
 
 }
 

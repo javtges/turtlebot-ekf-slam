@@ -11,7 +11,6 @@
 namespace turtlelib
 {
 
-    // constexpr double PI=3.14159265358979323846;
     constexpr double d = 0.16/2;
     constexpr double r = 0.033;
 
