@@ -11,6 +11,18 @@ namespace turtlelib{
 
     /// \brief defines a Transform2D object with a Vector2D translation
     /// \param trans - input Vector2D with x and y translational components
+    Transform2D::Transform2D(){
+        T[0][0] = 1;
+        T[1][0] = 0;
+        T[2][0] = 0;
+        T[0][1] = 0;
+        T[1][1] = 1;
+        T[2][1] = 0;
+        T[0][2] = 0;
+        T[1][2] = 0;
+        T[2][2] = 1;
+    }
+    
     Transform2D::Transform2D(Vector2D trans){
 
         T[0][0] = 1;
@@ -26,13 +38,13 @@ namespace turtlelib{
 
     /// \brief defines a Transform2D object with a double degrees rotation only
     /// \param degrees - input double of degrees
-    Transform2D::Transform2D(double degrees){
+    Transform2D::Transform2D(double radians){
 
-        T[0][0] = cos(deg2rad(degrees));
-        T[1][0] = sin(deg2rad(degrees));
+        T[0][0] = cos(radians);
+        T[1][0] = sin(radians);
         T[2][0] = 0;
-        T[0][1] = -sin(deg2rad(degrees));
-        T[1][1] = cos(deg2rad(degrees));
+        T[0][1] = -sin(radians);
+        T[1][1] = cos(radians);
         T[2][1] = 0;
         T[0][2] = 0;
         T[1][2] = 0;
@@ -43,13 +55,13 @@ namespace turtlelib{
     /// \brief defines a Transform2D object with a Vector2D rotation and double degrees rotation
     /// \param trans - input Vector2D with x and y translational components
     /// \param degrees - input double of degrees
-    Transform2D::Transform2D(Vector2D trans, double degrees){
+    Transform2D::Transform2D(Vector2D trans, double radians){
 
-        T[0][0] = cos(deg2rad(degrees));
-        T[1][0] = sin(deg2rad(degrees));
+        T[0][0] = cos(radians);
+        T[1][0] = sin(radians);
         T[2][0] = 0;
-        T[0][1] = -sin(deg2rad(degrees));
-        T[1][1] = cos(deg2rad(degrees));
+        T[0][1] = -sin(radians);
+        T[1][1] = cos(radians);
         T[2][1] = 0;
         T[0][2] = trans.x;
         T[1][2] = trans.y;
@@ -255,7 +267,7 @@ namespace turtlelib{
             d.y = -1 * twist.xdot / twist.thetadot; // May be an issue
             theta = twist.thetadot;
 
-            Transform2D Tss(rad2deg(theta));
+            Transform2D Tss(theta);
             Transform2D Tsb(d);
             Transform2D Tbs = Tsb.inv();
 
@@ -280,7 +292,7 @@ namespace turtlelib{
     /// \param os - an output stream
     /// \param tf - the twist to print
     std::ostream & operator<<(std::ostream & os, const Twist2D & v){
-        os << "[" << v.thetadot << " " << v.xdot << " " << v.ydot << "]\n";
+        os << "[" << v.thetadot << " " << v.xdot << " " << v.ydot << "]";
         return os;
     }
 
@@ -290,7 +302,7 @@ namespace turtlelib{
     /// \param os - an output stream
     /// \param tf - the vector to print
     std::ostream & operator<<(std::ostream & os, const Vector2D & v){
-        os << "[" << v.x << " " << v.y << "]\n";
+        os << "[" << v.x << " " << v.y << "]";
         return os;
     }
 
@@ -309,6 +321,7 @@ namespace turtlelib{
 
             is.get(str,6);
             is >> theta;
+            theta = deg2rad(theta);
             is.get(str,4);
             is >> vec.x;
             is.get(str,4);
@@ -317,7 +330,11 @@ namespace turtlelib{
 
             Transform2D output(vec,theta);
             tf = output;
-
+        }
+        else{
+            is >> theta >> vec.x >> vec.y;
+            Transform2D output(vec,deg2rad(theta));
+            tf = output;
         }
 
         return is;

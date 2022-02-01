@@ -46,18 +46,18 @@ int main(void){
     v_c = Tcb(v_b);
 
     cout << "v_bhat: " << v_bhat;
-    cout << "v_a: " << v_a;
-    cout << "v_b: " << v_b;
-    cout << "v_c: " << v_c;
+    cout << "v_a: " << v_a << "\n";
+    cout << "v_b: " << v_b << "\n";
+    cout << "v_c: " << v_c << "\n";
 
     /// Inputting Twist2D objects, and calculating other twists using the 2D transforms
     cout << "Enter twist V_b:" << endl;
     cin >> V_b;
     V_a = Tab(V_b);
     V_c = Tcb(V_b);
-    cout << "V_a " << V_a;
-    cout << "V_b " << V_b;
-    cout << "V_c " << V_c;
+    cout << "V_a " << V_a << "\n";
+    cout << "V_b " << V_b << "\n";
+    cout << "V_c " << V_c << "\n";
     cout << "AAAAA" << endl;
 
     //  TTest(0);

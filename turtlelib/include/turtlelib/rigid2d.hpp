@@ -153,13 +153,13 @@ namespace turtlelib
 
         /// \brief create a pure rotation
         /// \param radians - angle of the rotation, in radians
-        explicit Transform2D(double degrees);
+        explicit Transform2D(double radians);
 
         /// \brief Create a transformation with a translational and rotational
         /// component
         /// \param trans - the translation
         /// \param rot - the rotation, in radians
-        Transform2D(Vector2D trans, double degrees);
+        Transform2D(Vector2D trans, double radians);
 
         /// \brief apply a transformation to a Vector2D
         /// \param v - the vector to transform

@@ -177,7 +177,7 @@ TEST_CASE("ostream Vector output","[Vector2D]"){ // James Avtges
 
     vectorOut << vector;
 
-    CHECK(vectorOut.str() == "[9 1]\n");
+    CHECK(vectorOut.str() == "[9 1]");
 }
 
 TEST_CASE("istream Twist input","[Twist2D]"){ // James Avtges
@@ -202,7 +202,7 @@ TEST_CASE("ostream Twist output","[Twist2D]"){ // James Avtges
 
     twistOut << twist;
 
-    CHECK(twistOut.str() == "[10 5 4]\n");
+    CHECK(twistOut.str() == "[10 5 4]");
 }
 
 TEST_CASE("istream Transform input","[Transform2D]"){ // James Avtges
@@ -218,13 +218,26 @@ TEST_CASE("istream Transform input","[Transform2D]"){ // James Avtges
     CHECK(rotation == 80);
 }
 
+TEST_CASE("istream Transform input, Matt's test","[Transform2D]"){ // James Avtges (Matt Elwin)
+    std::stringstream transform;
+    Transform2D tfin;
+    transform << "45 -1 7";
+    transform >> tfin;
+    
+    Vector2D translation = tfin.translation();
+    double rotation = tfin.rotation();
+    CHECK(translation.x == -1);
+    CHECK(translation.y == 7);
+    CHECK(rotation == PI/4);
+}
+
 TEST_CASE("ostream Transform output","[Transform2D]"){ // James Avtges
     std::stringstream transformOut;
     Vector2D trans;
     trans.x = 3.2;
     trans.y = 4;
-    double rot = 6.1;
-    Transform2D T(trans,rot);
+    double rot_deg = 6.1;
+    Transform2D T(trans,deg2rad(rot_deg));
 
     transformOut << T;
 
@@ -238,18 +251,18 @@ TEST_CASE("constructor_all", "[transform]") { // Anna Garverick
     v.x = 1;
     v.y = 2;
 
-    double r = 90;
+    double r = PI/2;
 
     Transform2D T(v, r);
 
     Vector2D t_out = T.translation();
     double r_out = T.rotation();
 
-    double d = rad2deg(r_out);
+    double d = r_out;
 
     CHECK(t_out.x == 1);
     CHECK(t_out.y == 2);
-    CHECK(d == 90);
+    CHECK(d == PI/2);
 } 
 
 TEST_CASE("constructor_trans", "[transform]") { // Anna Garverick
@@ -262,7 +275,7 @@ TEST_CASE("constructor_trans", "[transform]") { // Anna Garverick
     Vector2D t_out = T.translation();
     double r_out = T.rotation();
 
-    double d = rad2deg(r_out);
+    double d = r_out;
 
     CHECK(t_out.x == 1);
     CHECK(t_out.y == 2);
@@ -270,25 +283,25 @@ TEST_CASE("constructor_trans", "[transform]") { // Anna Garverick
 }
 
 TEST_CASE("constructor_rot", "[transform]") { // Anna Garverick
-    double r = 90;
+    double r = PI/2;
 
     Transform2D T(r);
 
     Vector2D t_out = T.translation();
     double r_out = T.rotation();
 
-    double d = rad2deg(r_out);
+    double d = r_out;
 
     CHECK(t_out.x == 0);
     CHECK(t_out.y == 0);
-    CHECK(d == 90);
+    CHECK(d == PI/2);
 }
 TEST_CASE("inv", "[inverse]") { // Anna Garverick
     Vector2D v;
     v.x = 1;
-    v.y = 2;
+    v.y = 1;
 
-    double r = 45;
+    double r = PI/4;
 
     Transform2D T(v,r);
 
@@ -298,8 +311,8 @@ TEST_CASE("inv", "[inverse]") { // Anna Garverick
     Vector2D t_out = T_inv.translation();
     double r_out = T_inv.rotation();
 
-    CHECK(t_out.x == Approx(-2.121).margin(.01));
-    CHECK(t_out.y == Approx(-0.7071).margin(.01));
+    CHECK(t_out.x == Approx(-1.41421).margin(.01));
+    CHECK(t_out.y == Approx(0.0).margin(.01));
     CHECK(r_out == Approx(-1*PI/4).margin(.01));
 }
 
@@ -317,15 +330,15 @@ TEST_CASE("trans", "[translation]") { //Anna Garverick
 }
 
 TEST_CASE("rot", "[rotation]") { //Anna Garverick
-    double r = 33;
+    double r = PI/4;
 
     Transform2D T(r);
 
     double r_out = T.rotation();
 
-    double d = rad2deg(r_out);
+    double d = r_out;
 
-    CHECK(d == Approx(33).margin(.001));
+    CHECK(d == Approx(PI/4).margin(.001));
 }
 
 
@@ -515,9 +528,9 @@ TEST_CASE("Transform2D::operator*=, Basic Transformation", "[Transform2D]") // R
 {
     //Build objects
     Vector2D vec_a{1,2};
-    double ang_a = rad2deg(PI/4);
+    double ang_a = PI/4;
     Vector2D vec_b{2,3};
-    double ang_b = rad2deg(PI/3);
+    double ang_b = PI/3;
     Transform2D T_a{vec_a, ang_a};
     Transform2D T_b{vec_b, ang_b};
 
@@ -542,9 +555,9 @@ TEST_CASE("Transform2D::operator*=, Big Rotation", "[Transform2D]") // RKS
 {
     //Build objects
     Vector2D vec_a{1,2};
-    double ang_a = rad2deg(4.88692);
+    double ang_a = 4.88692;
     Vector2D vec_b{-2,3};
-    double ang_b = rad2deg(1.74533);
+    double ang_b = 1.74533;
     Transform2D T_a{vec_a, ang_a};
     Transform2D T_b{vec_b, ang_b};
 
@@ -658,9 +671,9 @@ TEST_CASE("Transform2D::operator*, Basic Transformation", "[Transform2D]") // RK
 {
     //Build objects
     Vector2D vec_a{1,2};
-    double ang_a = rad2deg(PI/4);
+    double ang_a = PI/4;
     Vector2D vec_b{2,3};
-    double ang_b = rad2deg(PI/3);
+    double ang_b = PI/3;
     Transform2D T_a{vec_a, ang_a};
     Transform2D T_b{vec_b, ang_b};
 
@@ -687,9 +700,9 @@ TEST_CASE("Transform2D::operator*, Big Rotation", "[Transform2D]") // RKS
 {
     //Build objects
     Vector2D vec_a{1,2};
-    double ang_a = rad2deg(4.88692);
+    double ang_a = 4.88692;
     Vector2D vec_b{-2,3};
-    double ang_b = rad2deg(1.74533);
+    double ang_b = 1.74533;
     Transform2D T_a{vec_a, ang_a};
     Transform2D T_b{vec_b, ang_b};
 
@@ -732,7 +745,7 @@ TEST_CASE("Transform2D::operator(Vector), Idenity Transform", "[Transform2D]") /
 TEST_CASE("Transform2D::operator(Vector), Simple Rotation", "[Transform2D]") // RKS
 {
     //Build objects
-    Transform2D T_ab{rad2deg(PI/4)};
+    Transform2D T_ab{PI/4};
     Vector2D vec_b{1.0, 1.0};
 
     // Answer
@@ -768,7 +781,7 @@ TEST_CASE("Transform2D::operator(Vector), Simple Transformation", "[Transform2D]
 {
     //Build objects
     Vector2D vec_a{2.0, -2.0};
-    Transform2D T_ab{vec_a, rad2deg(PI/4)};
+    Transform2D T_ab{vec_a, PI/4};
     Vector2D vec_b{1.0, 1.0};
 
     // Answer
@@ -805,11 +818,11 @@ TEST_CASE("Transform2D::operator(Twist2D), Idenity Transform", "[Transform2D]") 
 TEST_CASE("Transform2D::operator(Twist2D), Simple Rotation", "[Transform2D]") // RKS
 {
     //Build objects
-    Transform2D T_ab{45};
-    Twist2D twt_b{30, 1.0, 2.0};
+    Transform2D T_ab{PI/4};
+    Twist2D twt_b{PI/6, 1.0, 2.0};
 
     // Answer
-    Twist2D twt_ans{30, -0.70710678, 2.12132034};
+    Twist2D twt_ans{PI/6, -0.70710678, 2.12132034};
 
     //Perform functions
     Twist2D res_twt = T_ab(twt_b);
@@ -844,7 +857,7 @@ TEST_CASE("Transform2D::operator(Twist2D), Simple Transformation", "[Transform2D
 {
     //Build objects
     Vector2D vec_a{2.0, -2.0};
-    Transform2D T_ab{vec_a, 45};
+    Transform2D T_ab{vec_a, PI/4};
     Twist2D twt_b{deg2rad(30), 1.0, 2.0};
 
     // Answer
