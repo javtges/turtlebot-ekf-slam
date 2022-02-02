@@ -17,6 +17,23 @@ namespace turtlelib{
         phidot.Rdot = 0;
     }
     
+    Q DiffDrive::forward_kinematics(Twist2D twist) {
+        // Given a twist and an old Q, make a new Q
+        // Maybe overload with just a twist?
+        Transform2D Tbb_prime(0);
+        Tbb_prime = integrate_twist(twist);
+        Vector2D prev_vector;
+        prev_vector.x = q.x;
+        prev_vector.y = q.y;
+
+        Vector2D tbbp_vector = Tbb_prime(prev_vector);
+
+        q.x = q.x + tbbp_vector.x;
+        q.y = q.y + tbbp_vector.y;
+        q.theta = normalize_angle(q.theta + twist.thetadot);
+        
+        return q;
+    }
     
     Q DiffDrive::forward_kinematics(Q current_config, Twist2D twist) {
         // Given a twist and an old Q, make a new Q

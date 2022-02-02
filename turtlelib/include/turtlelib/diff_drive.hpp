@@ -43,6 +43,8 @@ namespace turtlelib
     public:
         DiffDrive();
 
+        Q forward_kinematics(Twist2D twist);
+
         Q forward_kinematics(Q current_config, Twist2D twist);
 
         Q forward_kinematics(Q current_config, Phidot wheel_speeds);
