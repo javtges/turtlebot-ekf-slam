@@ -1,0 +1,5 @@
+repositories:
+  slam_project:
+    type: git
+    url: git@github.com:ME495-Navigation/slam-project-javtges.git
+    version: main

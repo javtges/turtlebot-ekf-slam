@@ -20,6 +20,7 @@ namespace turtlelib{
     
     Q DiffDrive::forward_kinematics(Q current_config, Twist2D twist) {
         // Given a twist and an old Q, make a new Q
+        // Maybe overload with just a twist?
         Transform2D Tbb_prime(0);
         Tbb_prime = integrate_twist(twist);
         Vector2D prev_vector;
@@ -28,26 +29,24 @@ namespace turtlelib{
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        Q new_config;
-        new_config.x = current_config.x + tbbp_vector.x;
-        new_config.y = current_config.y + tbbp_vector.y;
-        new_config.theta = normalize_angle(current_config.theta + twist.thetadot);
+        q.x = current_config.x + tbbp_vector.x;
+        q.y = current_config.y + tbbp_vector.y;
+        q.theta = normalize_angle(current_config.theta + twist.thetadot);
         
-        return new_config;
+        return q;
     }
 
     Q DiffDrive::forward_kinematics(Q current_config, Phi prev_angle, Phi next_angle) {
         // Given a twist and an old Q, make a new Q
 
-        Phidot wheel_speeds;
-        wheel_speeds.Ldot = next_angle.L - prev_angle.L;
-        wheel_speeds.Rdot = next_angle.R - prev_angle.R;
+        phidot.Ldot = next_angle.L - prev_angle.L;
+        phidot.Rdot = next_angle.R - prev_angle.R;
 
         Transform2D Tbb_prime(0);
         Twist2D twist;
 
-        twist.thetadot = (0.5*r/d)*(wheel_speeds.Rdot - wheel_speeds.Ldot);
-        twist.xdot = (r/2)*(wheel_speeds.Rdot + wheel_speeds.Ldot);
+        twist.thetadot = (0.5*r/d)*(phidot.Rdot - phidot.Ldot);
+        twist.xdot = (r/2)*(phidot.Rdot + phidot.Ldot);
         twist.ydot = 0;       
         
 
@@ -58,18 +57,20 @@ namespace turtlelib{
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        Q new_config;
-        new_config.x = current_config.x + tbbp_vector.x;
-        new_config.y = current_config.y + tbbp_vector.y;
-        new_config.theta = normalize_angle(current_config.theta + twist.thetadot);
+        q.x = current_config.x + tbbp_vector.x;
+        q.y = current_config.y + tbbp_vector.y;
+        q.theta = normalize_angle(current_config.theta + twist.thetadot);
         
-        return new_config;
+        return q;
     }
 
     Q DiffDrive::forward_kinematics(Q current_config, Phidot wheel_speeds) {
 
         Transform2D Tbb_prime(0);
         Twist2D twist;
+        
+        phidot.Ldot = wheel_speeds.Ldot;
+        phidot.Rdot = wheel_speeds.Rdot;
 
         twist.thetadot = (0.5*r/d)*(wheel_speeds.Rdot - wheel_speeds.Ldot);
         twist.xdot = (r/2)*(wheel_speeds.Rdot + wheel_speeds.Ldot);
@@ -83,38 +84,35 @@ namespace turtlelib{
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        Q new_config;
-        new_config.x = current_config.x + tbbp_vector.x;
-        new_config.y = current_config.y + tbbp_vector.y;
-        new_config.theta = normalize_angle(current_config.theta + twist.thetadot);
+        q.x = current_config.x + tbbp_vector.x;
+        q.y = current_config.y + tbbp_vector.y;
+        q.theta = normalize_angle(current_config.theta + twist.thetadot);
         
-        return new_config;
+        return q;
     }
 
     Phidot DiffDrive::inverse_kinematics(Twist2D twist) {
-        Phidot output;
-        output.Ldot = ((-d)*twist.thetadot + twist.xdot)/r;
-        output.Rdot = ((d)*twist.thetadot + twist.xdot)/r;
+        phidot.Ldot = ((-d)*twist.thetadot + twist.xdot)/r;
+        phidot.Rdot = ((d)*twist.thetadot + twist.xdot)/r;
 
         if (twist.ydot != 0.0){
             throw std::logic_error("Invalid Twist!");
         }
 
-        return output; //this goes to cmd_vel I guess?
+        return phidot; //this goes to cmd_vel I guess?
     }
 
     Phi DiffDrive::update_phis(Twist2D twist, Phi angles){
             // call inverse_kinematics
         Phidot rates;
-        rates = inverse_kinematics(twist);
+        phidot = inverse_kinematics(twist);
         angles.L += rates.Ldot;
         angles.R += rates.Rdot;
         
-        Phi output;
-        output.L = std::fmod(angles.L, 2*PI);
-        output.R = std::fmod(angles.R, 2*PI);
+        phi.L = std::fmod(angles.L, 2*PI);
+        phi.R = std::fmod(angles.R, 2*PI);
     
-        return output;
+        return phi;
     }
 
 }
