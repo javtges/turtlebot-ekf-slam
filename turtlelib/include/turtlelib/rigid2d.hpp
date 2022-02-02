@@ -56,9 +56,17 @@ namespace turtlelib
 
     static_assert(almost_equal(deg2rad(0.0), 0.0), "deg2rad failed");
 
-    static_assert(almost_equal(rad2deg(0.0), 0.0), "rad2deg) failed");
+    static_assert(almost_equal(rad2deg(0.0), 0.0), "rad2deg failed");
 
     static_assert(almost_equal(deg2rad(rad2deg(2.1)), 2.1), "deg2rad failed");
+
+    static_assert(almost_equal(1, 1), "is_one failed");
+
+    static_assert(almost_equal(deg2rad(90), PI/2), "deg2rad failed");
+
+    static_assert(almost_equal(rad2deg(PI/2), 90), "rad2deg failed");
+
+    static_assert(almost_equal(deg2rad(rad2deg(10)), 10), "deg2rad failed");
 
 
 
