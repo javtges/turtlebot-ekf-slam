@@ -19,22 +19,19 @@
 #include <nuturtlebot_msgs/SensorData.h>
 #include <nuturtlebot_msgs/WheelCommands.h>
 
+static std::string odom_frame, body_id, wheel_left, wheel_right;
 static double x_0, y_0, theta_0, x_length, y_length, motor_cmd_to_radsec, encoder_ticks_to_rad;
 static int frequency;
 
-void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
-
-}
-
-void sensor_data_callback(const nuturtlebot_msgs::SensorData::ConstPtr& msg){
-
+void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
+    
 }
 
 
 int main(int argc, char * argv[])
 {
     /// Initalize the node and the nodehandler, one is public and one is private.
-    ros::init(argc, argv, "turtle_interface");
+    ros::init(argc, argv, "odometry");
     ros::NodeHandle nh("~");
     ros::NodeHandle n;
 
@@ -45,13 +42,19 @@ int main(int argc, char * argv[])
     n.param("theta0", theta_0, 0.0);
     n.param("x_length", x_length, 10.0);
     n.param("y_length", y_length, 10.0);
+    n.param("odom_id", odom_frame, std::string("odom"));
     
-    if (!n.getParam("motor_cmd_to_radsec",motor_cmd_to_radsec)){
+    if (!n.getParam("body_id",body_id)){
         ROS_ERROR_STREAM("Parameter not found!");
         ros::shutdown();
     }
 
-    if (!n.getParam("encoder_ticks_to_rad",encoder_ticks_to_rad)){
+    if (!n.getParam("wheel_left",wheel_left)){
+        ROS_ERROR_STREAM("Parameter not found!");
+        ros::shutdown();
+    }
+
+    if (!n.getParam("wheel_right",wheel_right)){
         ROS_ERROR_STREAM("Parameter not found!");
         ros::shutdown();
     }
@@ -59,10 +62,7 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     
-    ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::WheelCommands>("/wheel_cmd",100);
-    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("/joint_states",100);
-    ros::Subscriber cmd_vel_sub = n.subscribe("/cmd_vel",100, cmd_vel_callback);
-    ros::Subscriber sensor_data_sub = n.subscribe("/sensor_data",100, sensor_data_callback);
+    ros::Subscriber joint_state_sub = n.subscribe("/joint_states",100, joint_state_callback);
 
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.

@@ -10,9 +10,11 @@ project(nusim)
 find_package(catkin REQUIRED COMPONENTS
 message_generation
 message_runtime
+nuturtlebot_msgs
 roscpp
 std_msgs
-tf2_ros)
+tf2_ros
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

@@ -10,6 +10,7 @@ project(nuturtle_control)
 find_package(catkin REQUIRED COMPONENTS
 message_generation
 message_runtime
+nuturtlebot_msgs
 roscpp
 std_msgs
 tf2_ros)
@@ -108,8 +109,10 @@ catkin_package(
 #  LIBRARIES nuturtle_control
  CATKIN_DEPENDS
  message_runtime
+ nuturtlebot_msgs
  roscpp
  std_msgs
+ 
 #  DEPENDS system_lib
 )
 
@@ -120,7 +123,6 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-include
     ${catkin_INCLUDE_DIRS}
 )
 
@@ -142,6 +144,11 @@ add_executable(
     src/turtle_interface.cpp
     )
 
+add_executable(
+    odometry_node
+    src/odometry.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -153,8 +160,18 @@ add_executable(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(turtle_interface_node # was _node here
-  ${catkin_LIBRARIES} turtlelib
+target_link_libraries(
+    # ${PROJECT_NAME}
+    turtle_interface_node # was _node here
+    ${catkin_LIBRARIES} 
+    turtlelib
+)
+
+target_link_libraries(
+    # ${PROJECT_NAME}
+    odometry_node # was _node here
+    ${catkin_LIBRARIES} 
+    turtlelib
 )
 
 #############
@@ -173,20 +190,22 @@ target_link_libraries(turtle_interface_node # was _node here
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS turtle_interface_node # was _node here
+install(TARGETS 
+  turtle_interface_node # was $(PROJECT_NAME)_node here
+  odometry_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-# install(TARGETS ${PROJECT_NAME}
+# install(TARGETS turtle_interface_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
+# install(DIRECTORY src/turtle_interface_node
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 #   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
