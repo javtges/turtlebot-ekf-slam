@@ -53,6 +53,48 @@ namespace turtlelib{
         return q;
     }
 
+    Twist2D DiffDrive::get_twist_from_angles(Phi prev_angle, Phi next_angle){
+        
+        phidot.Ldot = next_angle.L - prev_angle.L;
+        phidot.Rdot = next_angle.R - prev_angle.R;
+
+        Twist2D twist;
+
+        twist.thetadot = (0.5*r/d)*(phidot.Rdot - phidot.Ldot);
+        twist.xdot = (r/2)*(phidot.Rdot + phidot.Ldot);
+        twist.ydot = 0;
+
+        return twist;
+    }
+
+    Q DiffDrive::forward_kinematics(Phi prev_angle, Phi next_angle) {
+        // Given a twist and an old Q, make a new Q
+
+        phidot.Ldot = next_angle.L - prev_angle.L;
+        phidot.Rdot = next_angle.R - prev_angle.R;
+
+        Transform2D Tbb_prime(0);
+        Twist2D twist;
+
+        twist.thetadot = (0.5*r/d)*(phidot.Rdot - phidot.Ldot);
+        twist.xdot = (r/2)*(phidot.Rdot + phidot.Ldot);
+        twist.ydot = 0;       
+        
+
+        Tbb_prime = integrate_twist(twist);
+        Vector2D prev_vector;
+        prev_vector.x = q.x;
+        prev_vector.y = q.y;
+
+        Vector2D tbbp_vector = Tbb_prime(prev_vector);
+
+        q.x = q.x + tbbp_vector.x;
+        q.y = q.y + tbbp_vector.y;
+        q.theta = normalize_angle(q.theta + twist.thetadot);
+        
+        return q;
+    }
+
     Q DiffDrive::forward_kinematics(Q current_config, Phi prev_angle, Phi next_angle) {
         // Given a twist and an old Q, make a new Q
 
@@ -69,14 +111,14 @@ namespace turtlelib{
 
         Tbb_prime = integrate_twist(twist);
         Vector2D prev_vector;
-        prev_vector.x = current_config.x;
-        prev_vector.y = current_config.y;
+        prev_vector.x = q.x;
+        prev_vector.y = q.y;
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        q.x = current_config.x + tbbp_vector.x;
-        q.y = current_config.y + tbbp_vector.y;
-        q.theta = normalize_angle(current_config.theta + twist.thetadot);
+        q.x = q.x + tbbp_vector.x;
+        q.y = q.y + tbbp_vector.y;
+        q.theta = normalize_angle(q.theta + twist.thetadot);
         
         return q;
     }
@@ -130,6 +172,25 @@ namespace turtlelib{
         phi.R = std::fmod(angles.R, 2*PI);
     
         return phi;
+    }
+
+    void DiffDrive::setConfig(Q config){
+        q = config;
+    }
+    void DiffDrive::setAngles(Phi angles){
+        phi = angles;
+    }
+    void DiffDrive::setSpeeds(Phidot speeds){
+        phidot = speeds;
+    }
+    Q DiffDrive::getConfig(){
+        return q;
+    }
+    Phi DiffDrive::getAngles(){
+        return phi;
+    }
+    Phidot DiffDrive::getSpeeds(){
+        return phidot;
     }
 
 }

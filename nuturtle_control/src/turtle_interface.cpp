@@ -51,8 +51,8 @@ void sensor_data_callback(const nuturtlebot_msgs::SensorData::ConstPtr& msg){
     joint_states.name = {"wheel_left_joint", "wheel_right_joint"};
     joint_states.position = {toRadians(msg->left_encoder), toRadians(msg->right_encoder)};
 
-    // FIGURE THIS OUT LATER
-    joint_states.velocity = {0.0, 0.0};
+    // May need to use another method for calculating velocity
+    joint_states.velocity = {speeds.left_velocity, speeds.right_velocity};
     joint_states.effort = {0.0, 0.0};
 
 }

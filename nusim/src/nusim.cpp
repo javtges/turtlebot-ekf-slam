@@ -63,7 +63,7 @@ turtlelib::Q turtle_config;
 /// \param &Request - the inputs to the service. For this type there are none.
 /// \param &Response - the outputs of the service. For this type there are none.
 /// returns true if executed successfully
-bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response &Response){
+bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response &){
     ts.data = 0;
     x = x_0;
     y = y_0;
@@ -71,12 +71,11 @@ bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response 
     return true;
 }
 
-
 /// \brief The callback function for the teleport service. Teleports the turtlebot to a given pose.
 /// \param &Request - the inputs to the service. For this type there is an x, y, and theta float64 input.
 /// \param &Response - the outputs of the service. For this type there are none.
 /// returns true if executed successfully
-bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Response &Response){
+bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Response &){
     x = Request.x;
     y = Request.y;
     theta = Request.theta;
@@ -84,11 +83,25 @@ bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Respon
 }
 
 void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
-    left_velocity = msg->left_velocity;
-    right_velocity = msg->right_velocity;
-
-    wheel_speeds.Ldot = left_velocity;
-    wheel_speeds.Rdot = right_velocity;
+    if(msg->left_velocity > 256){
+        left_velocity = 256;
+    }
+    if(msg->left_velocity < -256){
+        left_velocity = -256;
+    }
+    if(msg->right_velocity > 256){
+        right_velocity = 256;
+    }
+    if(msg->right_velocity < -256){
+        right_velocity = -256;
+    }
+    else{
+        left_velocity = msg->left_velocity;
+        right_velocity = msg->right_velocity;
+    }
+    
+    wheel_speeds.Ldot = left_velocity * motor_cmd_to_radsec;
+    wheel_speeds.Rdot = right_velocity * motor_cmd_to_radsec;
 }
 
 int toEncoderTicks(double radians){
@@ -240,8 +253,8 @@ int main(int argc, char * argv[])
     nh.getParam("x_pos", x_locs);
     nh.getParam("y_pos", y_locs);
     n.getParam("motor_cmd_to_radsec", motor_cmd_to_radsec);
-    n.getParam("motor_cmd_to_radsec", encoder_ticks_to_rad);
-    n.getParam("motor_cmd_to_radsec", motor_cmd_max);
+    n.getParam("encoder_ticks_to_rad", encoder_ticks_to_rad);
+    n.getParam("motor_cmd_max", motor_cmd_max);
 
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
@@ -307,8 +320,8 @@ int main(int argc, char * argv[])
 
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
         // Convert ticks to radians/second, use the frequency to determine how far the wheels turn during that time
-        sensor_data.left_encoder = toEncoderTicks((left_velocity*motor_cmd_to_radsec/frequency) + wheel_angles.L);
-        sensor_data.right_encoder = toEncoderTicks((right_velocity*motor_cmd_to_radsec/frequency) + wheel_angles.R);
+        sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot*motor_cmd_to_radsec/frequency) + wheel_angles.L);
+        sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot*motor_cmd_to_radsec/frequency) + wheel_angles.R);
         sensor_data_pub.publish(sensor_data);
 
         turtle_config = drive.forward_kinematics(turtle_config, wheel_speeds);

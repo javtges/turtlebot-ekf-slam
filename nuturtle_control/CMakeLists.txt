@@ -56,11 +56,10 @@ tf2_ros)
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  SetPose.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -70,10 +69,10 @@ tf2_ros)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -191,8 +190,8 @@ target_link_libraries(
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 install(TARGETS 
-  turtle_interface_node # was $(PROJECT_NAME)_node here
   odometry_node
+  turtle_interface_node # was $(PROJECT_NAME)_node here
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
