@@ -320,9 +320,13 @@ int main(int argc, char * argv[])
 
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
         // Convert ticks to radians/second, use the frequency to determine how far the wheels turn during that time
-        sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot*motor_cmd_to_radsec/frequency) + wheel_angles.L);
-        sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot*motor_cmd_to_radsec/frequency) + wheel_angles.R);
+        sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot/frequency) + wheel_angles.L);
+        sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot/frequency) + wheel_angles.R);
         sensor_data_pub.publish(sensor_data);
+
+        // Normalize angle MAY be wrong
+        wheel_angles.L = turtlelib::normalize_angle((wheel_speeds.Ldot/frequency) + wheel_angles.L);
+        wheel_angles.R = turtlelib::normalize_angle((wheel_speeds.Rdot/frequency) + wheel_angles.R);
 
         turtle_config = drive.forward_kinematics(turtle_config, wheel_speeds);
 

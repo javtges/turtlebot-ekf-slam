@@ -59,6 +59,7 @@ tf2_ros)
 add_service_files(
   FILES
   SetPose.srv
+  CircleControl.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -148,6 +149,11 @@ add_executable(
     src/odometry.cpp
 )
 
+add_executable(
+    circle_node
+    src/circle.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -169,6 +175,13 @@ target_link_libraries(
 target_link_libraries(
     # ${PROJECT_NAME}
     odometry_node # was _node here
+    ${catkin_LIBRARIES} 
+    turtlelib
+)
+
+target_link_libraries(
+    # ${PROJECT_NAME}
+    circle_node # was _node here
     ${catkin_LIBRARIES} 
     turtlelib
 )
