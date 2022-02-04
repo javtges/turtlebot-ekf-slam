@@ -106,17 +106,17 @@ int main(int argc, char * argv[])
     initial_config.y = y_0;
     
     if (!n.getParam("body_id",body_id)){
-        ROS_ERROR_STREAM("Parameter not found!");
+        ROS_ERROR_STREAM("Body ID frame not found!");
         ros::shutdown();
     }
 
     if (!n.getParam("wheel_left",wheel_left)){
-        ROS_ERROR_STREAM("Parameter not found!");
+        ROS_ERROR_STREAM("Wheel Left frame not found!");
         ros::shutdown();
     }
 
     if (!n.getParam("wheel_right",wheel_right)){
-        ROS_ERROR_STREAM("Parameter not found!");
+        ROS_ERROR_STREAM("Wheel Right frame not found!");
         ros::shutdown();
     }
 
@@ -133,16 +133,18 @@ int main(int argc, char * argv[])
     while(ros::ok())
     {
 
+
+        turtle_config = drive.getConfig();
         tf2_ros::TransformBroadcaster br;
         geometry_msgs::TransformStamped transformStamped;
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = odom_frame;
         transformStamped.child_frame_id = body_id;
-        transformStamped.transform.translation.x = 0;
-        transformStamped.transform.translation.y = 0;
+        transformStamped.transform.translation.x = turtle_config.x;
+        transformStamped.transform.translation.y = turtle_config.y;
         transformStamped.transform.translation.z = 0;
         tf2::Quaternion q;
-        q.setRPY(0, 0, 1);
+        q.setRPY(0, 0, turtle_config.theta);
         transformStamped.transform.rotation.x = q.x();
         transformStamped.transform.rotation.y = q.y();
         transformStamped.transform.rotation.z = q.z();

@@ -75,12 +75,12 @@ int main(int argc, char * argv[])
     n.param("y_length", y_length, 10.0);
     
     if (!n.getParam("motor_cmd_to_radsec",motor_cmd_to_radsec)){
-        ROS_ERROR_STREAM("Parameter not found!");
+        ROS_ERROR_STREAM("Parameter motor_cmd_to_radsec not found!");
         ros::shutdown();
     }
 
     if (!n.getParam("encoder_ticks_to_rad",encoder_ticks_to_rad)){
-        ROS_ERROR_STREAM("Parameter not found!");
+        ROS_ERROR_STREAM("Parameter encoder_ticks_to_rad not found!");
         ros::shutdown();
     }
 

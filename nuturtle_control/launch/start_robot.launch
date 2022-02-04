@@ -1,5 +1,10 @@
 <launch>
+
+<!-- Load diff_params from load.launch -->
+    <include file="$(find nuturtle_description)/launch/load.launch" pass_all_args="true">
         <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control"/>
         <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
+    
+    </include>
 
 </launch>
