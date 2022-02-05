@@ -87,10 +87,10 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     
-    ros::Publisher wheel_speed_pub = n.advertise<nuturtlebot_msgs::WheelCommands>("/wheel_cmd",100);
-    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("/joint_states",100);
-    ros::Subscriber cmd_vel_sub = n.subscribe("/cmd_vel",100, cmd_vel_callback);
-    ros::Subscriber sensor_data_sub = n.subscribe("/sensor_data",100, sensor_data_callback);
+    ros::Publisher wheel_speed_pub = n.advertise<nuturtlebot_msgs::WheelCommands>("wheel_cmd",100);
+    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",100);
+    ros::Subscriber cmd_vel_sub = n.subscribe("cmd_vel",100, cmd_vel_callback);
+    ros::Subscriber sensor_data_sub = n.subscribe("sensor_data",100, sensor_data_callback);
 
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.

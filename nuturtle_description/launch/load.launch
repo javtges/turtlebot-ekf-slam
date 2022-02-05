@@ -4,7 +4,7 @@
 
     <arg name="use_rviz" default="true" doc="Determines if rviz is to be launched. Default is true."/>
     <arg name="use_jsp" default="false" doc="Determines if the joint state publisher is to be launched. Default is false."/>
-    <arg name="color" default="black" doc="The color of the turtlebot. Defaults to black."/>
+    <arg name="color" default="red" doc="The color of the turtlebot. Defaults to black."/>
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
     <group ns="$(arg color)">

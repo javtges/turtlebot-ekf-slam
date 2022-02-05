@@ -259,13 +259,13 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("timestep", frequency);
-    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("/red/joint_states",10);
+    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",10);
     ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
     
     
-    ros::Publisher sensor_data_pub = nh.advertise<nuturtlebot_msgs::SensorData>("/red/sensor_data",100);
-    ros::Subscriber wheel_cmd_sub = n.subscribe("/red/wheel_cmd",100,wheelCallback); 
+    ros::Publisher sensor_data_pub = nh.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
+    ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);

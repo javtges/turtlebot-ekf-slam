@@ -30,6 +30,7 @@ static turtlelib::Phidot wheel_speeds;
 static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
+static std::vector<double> positions, velocities;
 
 void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     // Update internal odometry state
@@ -39,10 +40,20 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     turtlelib::Twist2D twist;
     turtlelib::Q new_config;
 
-    currentAngles.L = msg->position[0];
-    currentAngles.R = msg->position[1];
-    currentSpeeds.Ldot = msg->velocity[0];
-    currentSpeeds.Rdot = msg->velocity[1];
+
+    ROS_ERROR_STREAM("???????????????????");
+
+    positions.resize(2);
+    velocities.resize(2);
+    positions = msg->position;
+    velocities = msg->velocity;
+
+    currentAngles.L = positions[0];
+    currentAngles.R = positions[1];
+    currentSpeeds.Ldot = velocities[0];
+    currentSpeeds.Rdot = velocities[1];
+
+    ROS_ERROR_STREAM("!!!!!!!!!!!!!!!!!!");
     lastAngles = drive.getAngles();
     // MAYBE NEED TO HANDLE ANGLE ROLLOVER HERE????
 
@@ -74,7 +85,7 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
 }
 
-bool set_poseCallback(nuturtle_control::SetPose::Request &Request, std_srvs::Empty::Response &){
+bool set_poseCallback(nuturtle_control::SetPose::Request &Request, nuturtle_control::SetPose::Response &Response){
     // Reset the position of the odometry according to the request.
     turtlelib::Q newPose;
     newPose.x = Request.x;

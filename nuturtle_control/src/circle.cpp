@@ -63,7 +63,7 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     
-    ros::Publisher cmd_vel_pub = n.advertise<geometry_msgs::Twist>("/cmd_vel",100);
+    ros::Publisher cmd_vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel",100);
     ros::ServiceServer reverseService = nh.advertiseService("reverse", reverseCallback);
     ros::ServiceServer stopService = nh.advertiseService("stop", stopCallback);
     ros::ServiceServer controlService = nh.advertiseService("control", controlCallback);
