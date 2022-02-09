@@ -69,6 +69,9 @@ namespace turtlelib{
     Q DiffDrive::forward_kinematics(Phi next_angle) {
         // Given a twist and an old Q, make a new Q
 
+
+        // THIS IS THE ONE THAT WORKS
+
         phidot.Ldot = next_angle.L - phi.L;
         phidot.Rdot = next_angle.R - phi.R;
 
@@ -92,6 +95,9 @@ namespace turtlelib{
         q.x = Twb_prime.translation().x;
         q.y = Twb_prime.translation().y;
         q.theta = normalize_angle(Twb_prime.rotation());
+
+        phi.L = next_angle.L;
+        phi.R = next_angle.R;
         
         return q;
     }
