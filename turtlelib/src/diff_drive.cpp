@@ -4,7 +4,6 @@
 #include "turtlelib/rigid2d.hpp"
 #include "turtlelib/diff_drive.hpp"
 
-
 namespace turtlelib{
 
     DiffDrive::DiffDrive(){
@@ -28,8 +27,8 @@ namespace turtlelib{
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        q.x = q.x + tbbp_vector.x;
-        q.y = q.y + tbbp_vector.y;
+        q.x = tbbp_vector.x;
+        q.y = tbbp_vector.y;
         q.theta = normalize_angle(q.theta + twist.thetadot);
         
         return q;
@@ -46,8 +45,8 @@ namespace turtlelib{
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        q.x = current_config.x + tbbp_vector.x;
-        q.y = current_config.y + tbbp_vector.y;
+        q.x = tbbp_vector.x;
+        q.y = tbbp_vector.y;
         q.theta = normalize_angle(current_config.theta + twist.thetadot);
         
         return q;
@@ -67,13 +66,13 @@ namespace turtlelib{
         return twist;
     }
 
-    Q DiffDrive::forward_kinematics(Phi prev_angle, Phi next_angle) {
+    Q DiffDrive::forward_kinematics(Phi next_angle) {
         // Given a twist and an old Q, make a new Q
 
-        phidot.Ldot = next_angle.L - prev_angle.L;
-        phidot.Rdot = next_angle.R - prev_angle.R;
+        phidot.Ldot = next_angle.L - phi.L;
+        phidot.Rdot = next_angle.R - phi.R;
 
-        Transform2D Tbb_prime(0);
+        Transform2D Tbb_prime, Twb_prime;
         Twist2D twist;
 
         twist.thetadot = (0.5*r/d)*(phidot.Rdot - phidot.Ldot);
@@ -86,11 +85,13 @@ namespace turtlelib{
         prev_vector.x = q.x;
         prev_vector.y = q.y;
 
-        Vector2D tbbp_vector = Tbb_prime(prev_vector);
+        Transform2D Twb(prev_vector, q.theta);
 
-        q.x = q.x + tbbp_vector.x;
-        q.y = q.y + tbbp_vector.y;
-        q.theta = normalize_angle(q.theta + twist.thetadot);
+        Twb_prime = Twb * Tbb_prime;
+
+        q.x = Twb_prime.translation().x;
+        q.y = Twb_prime.translation().y;
+        q.theta = normalize_angle(Twb_prime.rotation());
         
         return q;
     }
@@ -101,24 +102,31 @@ namespace turtlelib{
         phidot.Ldot = next_angle.L - prev_angle.L;
         phidot.Rdot = next_angle.R - prev_angle.R;
 
-        Transform2D Tbb_prime(0);
-        Twist2D twist;
+        Transform2D Tbb_prime, Twb_prime;
 
+        Twist2D twist;
         twist.thetadot = (0.5*r/d)*(phidot.Rdot - phidot.Ldot);
         twist.xdot = (r/2)*(phidot.Rdot + phidot.Ldot);
-        twist.ydot = 0;       
+        twist.ydot = 0.0;
         
-
         Tbb_prime = integrate_twist(twist);
         Vector2D prev_vector;
-        prev_vector.x = q.x;
-        prev_vector.y = q.y;
+        double last_config_angle;
 
-        Vector2D tbbp_vector = Tbb_prime(prev_vector);
+        prev_vector.x = current_config.x;
+        prev_vector.y = current_config.y;
+        last_config_angle = current_config.theta;
 
-        q.x = q.x + tbbp_vector.x;
-        q.y = q.y + tbbp_vector.y;
-        q.theta = normalize_angle(q.theta + twist.thetadot);
+        Transform2D Twb(prev_vector, last_config_angle);
+
+        Twb_prime = Twb*Tbb_prime;
+
+        Vector2D new_config_vector = Twb_prime.translation();
+        double new_angle = Twb_prime.rotation();
+
+        q.x = new_config_vector.x;
+        q.y = new_config_vector.y;
+        q.theta = normalize_angle(new_angle);
         
         return q;
     }
@@ -143,8 +151,10 @@ namespace turtlelib{
 
         Vector2D tbbp_vector = Tbb_prime(prev_vector);
 
-        q.x = current_config.x + tbbp_vector.x;
-        q.y = current_config.y + tbbp_vector.y;
+        // q.x = current_config.x + tbbp_vector.x;
+        // q.y = current_config.y + tbbp_vector.y;
+        q.x = tbbp_vector.x;
+        q.y = tbbp_vector.y;
         q.theta = normalize_angle(current_config.theta + twist.thetadot);
         
         return q;

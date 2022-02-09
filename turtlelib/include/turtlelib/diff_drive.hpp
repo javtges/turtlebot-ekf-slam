@@ -51,7 +51,7 @@ namespace turtlelib
         
         Q forward_kinematics(Q current_config, Phi prev_angle, Phi next_angle);
 
-        Q forward_kinematics(Phi prev_angle, Phi next_angle);
+        Q forward_kinematics(Phi next_angle);
 
         // Q forward_kinematics(Phi next_angle);
 

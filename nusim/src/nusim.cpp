@@ -54,7 +54,7 @@ std::vector<double> radii;
 std::vector<double> x_locs;
 std::vector<double> y_locs;
 std::vector<double> motor_cmd_max;
-turtlelib::Phi wheel_angles;
+turtlelib::Phi wheel_angles, wheel_angles_old;
 turtlelib::Phidot wheel_speeds;
 turtlelib::Q turtle_config;
 
@@ -83,25 +83,15 @@ bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Respon
 }
 
 void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
-    if(msg->left_velocity > 256){
-        left_velocity = 256;
-    }
-    if(msg->left_velocity < -256){
-        left_velocity = -256;
-    }
-    if(msg->right_velocity > 256){
-        right_velocity = 256;
-    }
-    if(msg->right_velocity < -256){
-        right_velocity = -256;
-    }
-    else{
-        left_velocity = msg->left_velocity;
-        right_velocity = msg->right_velocity;
-    }
+
+    left_velocity = msg->left_velocity;
+    right_velocity = msg->right_velocity;
     
     wheel_speeds.Ldot = left_velocity * motor_cmd_to_radsec;
     wheel_speeds.Rdot = right_velocity * motor_cmd_to_radsec;
+    // ROS_ERROR_STREAM("wheelspeeds in nusim");
+    // ROS_ERROR_STREAM(wheel_speeds.Ldot);
+    // ROS_ERROR_STREAM(wheel_speeds.Rdot);
 }
 
 int toEncoderTicks(double radians){
@@ -259,12 +249,12 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("timestep", frequency);
-    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",10);
+    // ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",10);
     ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
     
     
-    ros::Publisher sensor_data_pub = nh.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
+    ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
     ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
@@ -275,6 +265,7 @@ int main(int argc, char * argv[])
     ts.data = 0;
     wheel_angles.L = 0.0;
     wheel_angles.R = 0.0;
+    wheel_angles_old = wheel_angles;
     turtle_config.theta = theta_0;
     turtle_config.x = x_0;
     turtle_config.y = y_0;
@@ -297,19 +288,33 @@ int main(int argc, char * argv[])
         // jointState.effort = {0.0, 0.0};
 
         /// Set up a tf2 broadcaster to define the postion of the turtlebot.
+
+        // ROS_ERROR_STREAM("it made it here");
+        // if (turtle_config.x > 10){
+            // ROS_ERROR_STREAM_ONCE(wheel_speeds.Ldot);
+            // ROS_ERROR_STREAM_ONCE(wheel_speeds.Rdot);
+            // ROS_ERROR_STREAM_ONCE("it's doomed");
+            // ROS_ERROR_STREAM_ONCE(turtle_config.x); // IT'S THIS
+            // ROS_ERROR_STREAM_ONCE(turtle_config.y);
+            // ROS_ERROR_STREAM_ONCE(turtle_config.theta);
+        // }
+        
+        // ROS_ERROR_STREAM("making broadcaster");
         static tf2_ros::TransformBroadcaster br;
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "world";
         transformStamped.child_frame_id = "red-base_footprint";
-        transformStamped.transform.translation.x = x;
-        transformStamped.transform.translation.y = y;
+        transformStamped.transform.translation.x = turtle_config.x;
+        transformStamped.transform.translation.y = turtle_config.y;
         transformStamped.transform.translation.z = 0.0;
         tf2::Quaternion q;
-        q.setRPY(0, 0, theta);
+        q.setRPY(0, 0, turtle_config.theta);
         transformStamped.transform.rotation.x = q.x();
         transformStamped.transform.rotation.y = q.y();
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
+        // ROS_ERROR_STREAM("broadcasted");
+
 
         /// Send the transform and publish the JointState and the timestamp message.
         br.sendTransform(transformStamped);
@@ -320,18 +325,26 @@ int main(int argc, char * argv[])
 
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
         // Convert ticks to radians/second, use the frequency to determine how far the wheels turn during that time
-        sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot/frequency) + wheel_angles.L);
-        sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot/frequency) + wheel_angles.R);
+        // ROS_ERROR_STREAM("making sensor data");
+        // consider making this +=
+        sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot/frequency) + wheel_angles_old.L);
+        sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot/frequency) + wheel_angles_old.R);
+        // ROS_ERROR_STREAM(turtle_config);
         sensor_data_pub.publish(sensor_data);
-
+        // ROS_ERROR_STREAM("published sensor data");
         // Normalize angle MAY be wrong
-        wheel_angles.L = turtlelib::normalize_angle((wheel_speeds.Ldot/frequency) + wheel_angles.L);
-        wheel_angles.R = turtlelib::normalize_angle((wheel_speeds.Rdot/frequency) + wheel_angles.R);
+        wheel_angles.L = (wheel_speeds.Ldot/frequency) + wheel_angles_old.L;
+        wheel_angles.R = (wheel_speeds.Rdot/frequency) + wheel_angles_old.R;
 
-        turtle_config = drive.forward_kinematics(turtle_config, wheel_speeds);
+        // make this update properly and then make the broadcaster work properly with the config
+        turtle_config = drive.forward_kinematics(wheel_angles);
+        ROS_ERROR_STREAM("config");
+        ROS_ERROR_STREAM(turtle_config.x);
+        ROS_ERROR_STREAM(turtle_config.y);
 
-        
-        
+        wheel_angles_old = wheel_angles;
+
+
         // Use forward kinematics from DiffDrive to update the position of the robot
 
         /// Increment the timestamp, spin, and sleep for the 500Hz delay.

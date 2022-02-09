@@ -94,7 +94,7 @@ TEST_CASE("turning in place, forward kinematics", "[DiffDrive]"){ //James Avtges
     next_angle.L = PI/4;
     next_angle.R = -PI/4;
 
-    result_config = drive.forward_kinematics(zero_config, prev_angle, next_angle);
+    result_config = drive.forward_kinematics(next_angle);
     CHECK(result_config.theta == Approx(-0.033*PI/4 / 0.08).margin(0.01));
     CHECK(result_config.x == Approx(0).margin(0.01));
     CHECK(result_config.y == Approx(0).margin(0.01));
@@ -386,7 +386,7 @@ TEST_CASE("twist integration", "[Transform2D]"){ // James Avtges
 
 }
 
-TEST_CASE("Integrating a Twist", "[rigid2d]") { // Marco Morales
+TEST_CASE("Integrating a Twist", "[rigid2d]") { // Marco Morales & RKS
     Twist2D twist;
     Transform2D TbbPrime(0);
     Vector2D trans;
@@ -413,6 +413,54 @@ TEST_CASE("Integrating a Twist", "[rigid2d]") { // Marco Morales
         CHECK( trans.x == Approx(-2.54).margin(0.01));
         CHECK( trans.y ==  Approx(1.272).margin(0.01));
         CHECK( rot ==  Approx(PI));
+    }
+
+    SECTION( "Testing Both Rotational and Translational components v4" ) {
+        twist.xdot = 0.0;
+        twist.ydot = 0.0;
+        twist.thetadot = 0;
+        TbbPrime = integrate_twist(twist);
+        trans = TbbPrime.translation();
+        rot = TbbPrime.rotation();
+        CHECK( trans.x == Approx(0.0).margin(0.01));
+        CHECK( trans.y ==  Approx(0.0).margin(0.01));
+        CHECK( rot ==  Approx(0.0).margin(0.01));
+    }
+
+    SECTION( "Testing Both Rotational and Translational components v5" ) {
+        twist.xdot = 5.0;
+        twist.ydot = 2.0;
+        twist.thetadot = 0.0;
+        TbbPrime = integrate_twist(twist);
+        trans = TbbPrime.translation();
+        rot = TbbPrime.rotation();
+        CHECK( trans.x == Approx(5.0).margin(0.01));
+        CHECK( trans.y ==  Approx(2.0).margin(0.01));
+        CHECK( rot ==  Approx(0).margin(0.01));
+    }
+
+    SECTION( "Testing Both Rotational and Translational components v6" ) {
+        twist.xdot = 0.0;
+        twist.ydot = 0.0;
+        twist.thetadot = PI/4;
+        TbbPrime = integrate_twist(twist);
+        trans = TbbPrime.translation();
+        rot = TbbPrime.rotation();
+        CHECK( trans.x == Approx(0.0).margin(0.01));
+        CHECK( trans.y ==  Approx(0.0).margin(0.01));
+        CHECK( rot ==  Approx(PI/4));
+    }
+
+    SECTION( "Testing Both Rotational and Translational components v7" ) {
+        twist.xdot = 5.0;
+        twist.ydot = 2.0;
+        twist.thetadot = PI/4;
+        TbbPrime = integrate_twist(twist);
+        trans = TbbPrime.translation();
+        rot = TbbPrime.rotation();
+        CHECK( trans.x == Approx(3.75574).margin(0.01));
+        CHECK( trans.y ==  Approx(3.66525).margin(0.01));
+        CHECK( rot ==  Approx(PI/4));
     }
 }
 

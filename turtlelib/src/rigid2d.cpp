@@ -254,7 +254,7 @@ namespace turtlelib{
         // thetadot * -ys + xdot = 0
         // thetadot * xs + ydot = 0
 
-        if (twist.thetadot == 0){
+        if (almost_equal(twist.thetadot,0.0)){
             d.y = twist.ydot;
             d.x = twist.xdot;
 
@@ -267,11 +267,19 @@ namespace turtlelib{
             d.y = -1 * twist.xdot / twist.thetadot; // May be an issue
             theta = twist.thetadot;
 
+            if(almost_equal(d.x,0.0)){
+                d.x = 0.0;
+            }
+
+            if(almost_equal(d.y,0.0)){
+                d.y = 0.0;
+            }
+
             Transform2D Tss(theta);
             Transform2D Tsb(d);
             Transform2D Tbs = Tsb.inv();
 
-            Transform2D Tbb = (Tbs * Tss) * Tsb;
+            Transform2D Tbb = Tbs * Tss * Tsb;
 
             return Tbb;
         }

@@ -41,7 +41,7 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     turtlelib::Q new_config;
 
 
-    ROS_ERROR_STREAM("???????????????????");
+    // ROS_ERROR_STREAM("???????????????????");
 
     positions.resize(2);
     velocities.resize(2);
@@ -53,12 +53,13 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     currentSpeeds.Ldot = velocities[0];
     currentSpeeds.Rdot = velocities[1];
 
-    ROS_ERROR_STREAM("!!!!!!!!!!!!!!!!!!");
+    // ROS_ERROR_STREAM("!!!!!!!!!!!!!!!!!!");
     lastAngles = drive.getAngles();
     // MAYBE NEED TO HANDLE ANGLE ROLLOVER HERE????
 
     twist = drive.get_twist_from_angles(lastAngles, currentAngles);
-    new_config = drive.forward_kinematics(lastAngles, currentAngles);
+    // UNCOMMENT THIS LATER
+    // new_config = drive.forward_kinematics(lastAngles, currentAngles);
 
     odom.header.stamp = ros::Time::now();
     odom.header.frame_id = odom_frame;
@@ -134,8 +135,8 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     
-    ros::Subscriber joint_state_sub = n.subscribe("/joint_states",100, joint_state_callback);
-    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("/odom",100);
+    ros::Subscriber joint_state_sub = n.subscribe("joint_states",100, joint_state_callback);
+    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
     ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);

@@ -68,12 +68,12 @@ int main(int argc, char * argv[])
     ros::ServiceServer stopService = nh.advertiseService("stop", stopCallback);
     ros::ServiceServer controlService = nh.advertiseService("control", controlCallback);
 
-    twist.linear.x = 0;
-    twist.linear.y = 0;
-    twist.linear.z = 0;
-    twist.angular.x = 0;
-    twist.angular.y = 0;
-    twist.angular.z = 0;
+    twist.linear.x = 0.0;
+    twist.linear.y = 0.0;
+    twist.linear.z = 0.0;
+    twist.angular.x = 0.0;
+    twist.angular.y = 0.0;
+    twist.angular.z = 0.0;
 
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.

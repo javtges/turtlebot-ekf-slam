@@ -4,23 +4,45 @@
     <arg name="use_rviz" default="true" doc="Determines if rviz is to be launched. Default is true."/>
     <arg name="robot" default="nusim" doc="Determines the robot to run. The default is 'nusim' for simulation, 'localhost' to run the nodes from the turtlebot3, or a turtlebot name to run the nodes on a specific robot."/>
 
-
 <!-- Load diff_params from load.launch -->
-    <include file="$(find nuturtle_description)/launch/load.launch" pass_all_args="true">
-        <arg name="use_rviz" value="false"/>
-    </include>
-
-    <!-- <group if="$(arg cmd_src == 'circle')"> -->
-        <!-- <node type="circle" name="circle" pkg="nuturtle_control"/> -->
-    <!-- </group> -->
-
     <param name="body_id" value="red-base_link"/>
+    <param name="odom_id" value="odom"/>
     <param name="wheel_left" value="red-wheel_left_joint"/>
     <param name="wheel_right" value="red-wheel_right_joint"/> 
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
-    <node type="nusim" name="nusim" pkg="nusim"/>
+
+<!-- RED TURTLE: -->
+    <!-- nusim -->
+<!--  -->
+<!-- BLUE TURTLE: -->
+    <!-- odometry -->
+<!--  -->
+<!-- BOTH TURTLES: -->
+    <!-- turtle_interface_node -->
+    <!-- robot_description -->
+    <!-- robot_state_publisher -->
+    <!-- circle / teleop / etc -->
+
+
     <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control"/>
-    <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
+    <!-- <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/> -->
+
+    <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=red"/>
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+    <!-- <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/> -->
+
+    <node type="circle_node" name="circle_node" pkg="nuturtle_control" if="$(eval arg('cmd_src') == 'circle')"/>
+
+    <node type="nusim" name="nusim" pkg="nusim" if="$(eval arg('robot') == 'nusim')"/>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="odom_broadcaster" args="0 0 0 0 0 0 1 world odom" />
     
+    <group if="$(arg use_rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuturtle_control)/config/start_robot.rviz"/>
+    </group>
+
 
 </launch>

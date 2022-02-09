@@ -39,20 +39,47 @@ double toRadians(int ticks){
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
     turtlelib::Twist2D twist;
     twist.xdot = msg->linear.x;
+    ROS_ERROR_STREAM(twist.xdot);
     twist.ydot = msg->linear.y;
+    ROS_ERROR_STREAM(twist.ydot);
     twist.thetadot = msg->angular.z;
+    ROS_ERROR_STREAM(twist.thetadot);
+
+    // convert to wheel_cmd
     wheel_speeds = drive.inverse_kinematics(twist);
-    speeds.left_velocity = wheel_speeds.Ldot;
-    speeds.right_velocity = wheel_speeds.Rdot;
+
+    ROS_ERROR_STREAM(wheel_speeds.Ldot);
+    ROS_ERROR_STREAM(wheel_speeds.Rdot);
+
+    speeds.left_velocity = wheel_speeds.Ldot/motor_cmd_to_radsec;
+    speeds.right_velocity = wheel_speeds.Rdot/motor_cmd_to_radsec;
+
+    ROS_ERROR_STREAM(speeds.left_velocity);
+    ROS_ERROR_STREAM(speeds.right_velocity);
+
+    if(speeds.left_velocity > 256){
+        speeds.left_velocity = 256;
+    }
+    if(speeds.left_velocity < -256){
+        speeds.left_velocity = -256;
+    }
+    if(speeds.right_velocity > 256){
+        speeds.right_velocity = 256;
+    }
+    if(speeds.right_velocity < -256){
+        speeds.right_velocity = -256;
+    }
+
 }
 
 void sensor_data_callback(const nuturtlebot_msgs::SensorData::ConstPtr& msg){
+    //Joint states aren't being published when there's no sensor data, so we get problems in the tf tree because it's incomplete
     joint_states.header.stamp = ros::Time::now();
-    joint_states.name = {"wheel_left_joint", "wheel_right_joint"};
+    joint_states.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
     joint_states.position = {toRadians(msg->left_encoder), toRadians(msg->right_encoder)};
-
+    // ROS_ERROR_STREAM("oh no");
     // May need to use another method for calculating velocity
-    joint_states.velocity = {speeds.left_velocity, speeds.right_velocity};
+    joint_states.velocity = {wheel_speeds.Ldot, wheel_speeds.Rdot};
     joint_states.effort = {0.0, 0.0};
 
 }
@@ -92,11 +119,18 @@ int main(int argc, char * argv[])
     ros::Subscriber cmd_vel_sub = n.subscribe("cmd_vel",100, cmd_vel_callback);
     ros::Subscriber sensor_data_sub = n.subscribe("sensor_data",100, sensor_data_callback);
 
+    joint_states.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
+    joint_states.position = {0.0, 0.0};
+    joint_states.velocity = {0.0, 0.0};
+    joint_states.effort = {0.0, 0.0};
+    speeds.left_velocity = 0;
+    speeds.right_velocity = 0;
+
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
     {
-        wheel_speed_pub.publish(speeds);
+        wheel_speed_pub.publish(speeds); //wheel_cmd , make it within range
         joint_state_pub.publish(joint_states);
         ros::spinOnce();
         r.sleep();
