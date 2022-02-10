@@ -39,23 +39,23 @@ double toRadians(int ticks){
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
     turtlelib::Twist2D twist;
     twist.xdot = msg->linear.x;
-    ROS_ERROR_STREAM(twist.xdot);
+    // ROS_ERROR_STREAM(twist.xdot);
     twist.ydot = msg->linear.y;
-    ROS_ERROR_STREAM(twist.ydot);
+    // ROS_ERROR_STREAM(twist.ydot);
     twist.thetadot = msg->angular.z;
-    ROS_ERROR_STREAM(twist.thetadot);
+    // ROS_ERROR_STREAM(twist.thetadot);
 
     // convert to wheel_cmd
     wheel_speeds = drive.inverse_kinematics(twist);
 
-    ROS_ERROR_STREAM(wheel_speeds.Ldot);
-    ROS_ERROR_STREAM(wheel_speeds.Rdot);
+    // ROS_ERROR_STREAM(wheel_speeds.Ldot);
+    // ROS_ERROR_STREAM(wheel_speeds.Rdot);
 
     speeds.left_velocity = wheel_speeds.Ldot/motor_cmd_to_radsec;
     speeds.right_velocity = wheel_speeds.Rdot/motor_cmd_to_radsec;
 
-    ROS_ERROR_STREAM(speeds.left_velocity);
-    ROS_ERROR_STREAM(speeds.right_velocity);
+    // ROS_ERROR_STREAM(speeds.left_velocity);
+    // ROS_ERROR_STREAM(speeds.right_velocity);
 
     if(speeds.left_velocity > 256){
         speeds.left_velocity = 256;
@@ -115,7 +115,7 @@ int main(int argc, char * argv[])
     ros::Rate r(frequency); 
     
     ros::Publisher wheel_speed_pub = n.advertise<nuturtlebot_msgs::WheelCommands>("wheel_cmd",100);
-    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",100);
+    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("red/joint_states",100);
     ros::Subscriber cmd_vel_sub = n.subscribe("cmd_vel",100, cmd_vel_callback);
     ros::Subscriber sensor_data_sub = n.subscribe("sensor_data",100, sensor_data_callback);
 

@@ -19,17 +19,20 @@ namespace turtlelib{
     Q DiffDrive::forward_kinematics(Twist2D twist) {
         // Given a twist and an old Q, make a new Q
         // Maybe overload with just a twist?
-        Transform2D Tbb_prime(0);
+        Transform2D Tbb_prime, Twb_prime;
+
         Tbb_prime = integrate_twist(twist);
         Vector2D prev_vector;
         prev_vector.x = q.x;
         prev_vector.y = q.y;
 
-        Vector2D tbbp_vector = Tbb_prime(prev_vector);
+        Transform2D Twb(prev_vector, q.theta);
 
-        q.x = tbbp_vector.x;
-        q.y = tbbp_vector.y;
-        q.theta = normalize_angle(q.theta + twist.thetadot);
+        Twb_prime = Twb * Tbb_prime;
+
+        q.x = Twb_prime.translation().x;
+        q.y = Twb_prime.translation().y;
+        q.theta = normalize_angle(Twb_prime.rotation());
         
         return q;
     }
@@ -52,15 +55,13 @@ namespace turtlelib{
         return q;
     }
 
-    Twist2D DiffDrive::get_twist_from_angles(Phi prev_angle, Phi next_angle){
-        
-        phidot.Ldot = next_angle.L - prev_angle.L;
-        phidot.Rdot = next_angle.R - prev_angle.R;
+    Twist2D DiffDrive::get_twist_from_angles(Phidot speeds){
+        // returns the instaneous twist
 
         Twist2D twist;
 
-        twist.thetadot = (0.5*r/d)*(phidot.Rdot - phidot.Ldot);
-        twist.xdot = (r/2)*(phidot.Rdot + phidot.Ldot);
+        twist.thetadot = (0.5*r/d)*(speeds.Rdot - speeds.Ldot);
+        twist.xdot = (r/2)*(speeds.Rdot + speeds.Ldot);
         twist.ydot = 0;
 
         return twist;
@@ -68,6 +69,7 @@ namespace turtlelib{
 
     Q DiffDrive::forward_kinematics(Phi next_angle) {
         // Given a twist and an old Q, make a new Q
+        // Updates wheel angles and wheel speeds as well
 
 
         // THIS IS THE ONE THAT WORKS

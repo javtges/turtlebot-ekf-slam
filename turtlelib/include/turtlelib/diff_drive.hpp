@@ -59,7 +59,7 @@ namespace turtlelib
 
         Phi update_phis(Twist2D twist, Phi angles);
 
-        Twist2D get_twist_from_angles(Phi prev_angle, Phi next_angle);
+        Twist2D get_twist_from_angles(Phidot speeds);
 
         void setConfig(Q config);
         void setAngles(Phi angles);

@@ -36,7 +36,7 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     // Update internal odometry state
 
     turtlelib::Phidot currentSpeeds;
-    turtlelib::Phi currentAngles, lastAngles;
+    turtlelib::Phi currentAngles, nextAngles;
     turtlelib::Twist2D twist;
     turtlelib::Q new_config;
 
@@ -49,17 +49,26 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     velocities = msg->velocity;
 
     currentAngles.L = positions[0];
+    ROS_ERROR_STREAM(currentAngles.L);
     currentAngles.R = positions[1];
     currentSpeeds.Ldot = velocities[0];
     currentSpeeds.Rdot = velocities[1];
 
+    drive.setSpeeds(currentSpeeds);
+    drive.setAngles(currentAngles);
+
     // ROS_ERROR_STREAM("!!!!!!!!!!!!!!!!!!");
-    lastAngles = drive.getAngles();
     // MAYBE NEED TO HANDLE ANGLE ROLLOVER HERE????
 
-    twist = drive.get_twist_from_angles(lastAngles, currentAngles);
+    nextAngles.L = (currentSpeeds.Ldot/frequency) + currentAngles.L;
+    nextAngles.R = (currentSpeeds.Rdot/frequency) + currentAngles.R;
+
+    twist = drive.get_twist_from_angles(currentSpeeds);
     // UNCOMMENT THIS LATER
-    // new_config = drive.forward_kinematics(lastAngles, currentAngles);
+    // Tried: nextAngles, twist, current/lastangles
+    new_config = drive.forward_kinematics(nextAngles);
+
+    ROS_ERROR_STREAM(new_config.x);
 
     odom.header.stamp = ros::Time::now();
     odom.header.frame_id = odom_frame;
@@ -135,11 +144,14 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     
-    ros::Subscriber joint_state_sub = n.subscribe("joint_states",100, joint_state_callback);
+    ros::Subscriber joint_state_sub = n.subscribe("red/joint_states",10, joint_state_callback);
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
     ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);
+
+    tf2_ros::TransformBroadcaster br;
+    geometry_msgs::TransformStamped transformStamped;
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
@@ -147,8 +159,7 @@ int main(int argc, char * argv[])
 
 
         turtle_config = drive.getConfig();
-        tf2_ros::TransformBroadcaster br;
-        geometry_msgs::TransformStamped transformStamped;
+
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = odom_frame;
         transformStamped.child_frame_id = body_id;
@@ -164,6 +175,7 @@ int main(int argc, char * argv[])
 
         br.sendTransform(transformStamped);
 
+        // ROS_WARN_STREAM("publishing odom??");
         odom_pub.publish(odom);
 
         ros::spinOnce();

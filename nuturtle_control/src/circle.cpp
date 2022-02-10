@@ -44,6 +44,8 @@ bool stopCallback(std_srvs::Empty::Request &, std_srvs::Empty::Response &){
 }
 
 bool reverseCallback(std_srvs::Empty::Request &, std_srvs::Empty::Response &){
+    go_flag = true;
+    stop_flag = false;
     twist.linear.x *= -1;
     twist.angular.z *= -1;
     return true;

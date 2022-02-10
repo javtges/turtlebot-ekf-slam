@@ -258,6 +258,7 @@ int main(int argc, char * argv[])
     ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
+    // MAKE SURE THESE STILL WORK EVENTUALLY
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
 
@@ -280,25 +281,6 @@ int main(int argc, char * argv[])
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
     {
-        /// Creates a JointState message for the wheels.
-        // jointState.header.stamp = ros::Time::now();
-        // jointState.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
-        // jointState.position = {0.0, 0.0};
-        // jointState.velocity = {0.0, 0.0};
-        // jointState.effort = {0.0, 0.0};
-
-        /// Set up a tf2 broadcaster to define the postion of the turtlebot.
-
-        // ROS_ERROR_STREAM("it made it here");
-        // if (turtle_config.x > 10){
-            // ROS_ERROR_STREAM_ONCE(wheel_speeds.Ldot);
-            // ROS_ERROR_STREAM_ONCE(wheel_speeds.Rdot);
-            // ROS_ERROR_STREAM_ONCE("it's doomed");
-            // ROS_ERROR_STREAM_ONCE(turtle_config.x); // IT'S THIS
-            // ROS_ERROR_STREAM_ONCE(turtle_config.y);
-            // ROS_ERROR_STREAM_ONCE(turtle_config.theta);
-        // }
-        
         // ROS_ERROR_STREAM("making broadcaster");
         static tf2_ros::TransformBroadcaster br;
         transformStamped.header.stamp = ros::Time::now();
@@ -338,9 +320,6 @@ int main(int argc, char * argv[])
 
         // make this update properly and then make the broadcaster work properly with the config
         turtle_config = drive.forward_kinematics(wheel_angles);
-        ROS_ERROR_STREAM("config");
-        ROS_ERROR_STREAM(turtle_config.x);
-        ROS_ERROR_STREAM(turtle_config.y);
 
         wheel_angles_old = wheel_angles;
 

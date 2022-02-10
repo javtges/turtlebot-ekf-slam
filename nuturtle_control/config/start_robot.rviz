@@ -7,9 +7,9 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /RobotModel1/Status1
+        - /RobotModel2
         - /MarkerArray1/Namespaces1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.4683153033256531
     Tree Height: 555
   - Class: rviz/Selection
     Name: Selection
@@ -99,7 +99,56 @@ Visualization Manager:
           Show Trail: false
           Value: true
       Name: RobotModel
-      Robot Description: robot_description
+      Robot Description: red/robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_scan:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        blue-base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        blue-base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        blue-caster_back_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        blue-wheel_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        blue-wheel_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: RobotModel
+      Robot Description: blue/robot_description
       TF Prefix: ""
       Update Interval: 0
       Value: true
@@ -111,6 +160,16 @@ Visualization Manager:
         All Enabled: false
         base_scan:
           Value: false
+        blue-base_footprint:
+          Value: true
+        blue-base_link:
+          Value: true
+        blue-caster_back_link:
+          Value: true
+        blue-wheel_left_link:
+          Value: true
+        blue-wheel_right_link:
+          Value: true
         imu_link:
           Value: false
         odom:
@@ -121,6 +180,10 @@ Visualization Manager:
           Value: false
         red-caster_back_link:
           Value: false
+        red-wheel_left_link:
+          Value: true
+        red-wheel_right_link:
+          Value: true
         world:
           Value: true
       Marker Alpha: 1
@@ -132,7 +195,14 @@ Visualization Manager:
       Tree:
         world:
           odom:
-            {}
+            blue-base_footprint:
+              blue-base_link:
+                blue-caster_back_link:
+                  {}
+                blue-wheel_left_link:
+                  {}
+                blue-wheel_right_link:
+                  {}
           red-base_footprint:
             red-base_link:
               base_scan:
@@ -140,6 +210,10 @@ Visualization Manager:
               imu_link:
                 {}
               red-caster_back_link:
+                {}
+              red-wheel_left_link:
+                {}
+              red-wheel_right_link:
                 {}
       Update Interval: 0
       Value: true
@@ -187,7 +261,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.9614944458007812
+      Distance: 2.856717824935913
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -203,9 +277,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.43539801239967346
+      Pitch: 1.2703973054885864
       Target Frame: <Fixed Frame>
-      Yaw: 2.175400733947754
+      Yaw: 3.1854052543640137
     Saved: ~
 Window Geometry:
   Displays:
@@ -224,4 +298,4 @@ Window Geometry:
     collapsed: true
   Width: 1200
   X: 368
-  Y: 27
+  Y: 0
