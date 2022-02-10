@@ -11,19 +11,6 @@
     <param name="wheel_right" value="blue-wheel_right_joint"/> 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
 
-
-<!-- RED TURTLE: -->
-    <!-- nusim -->
-<!--  -->
-<!-- BLUE TURTLE: -->
-    <!-- odometry -->
-<!--  -->
-<!-- BOTH TURTLES: -->
-    <!-- turtle_interface_node -->
-    <!-- robot_description -->
-    <!-- robot_state_publisher -->
-    <!-- circle / teleop / etc -->
-
     <group>
         <include file="$(find nuturtle_description)/launch/load.launch">
             <arg name="use_rviz" value="false"/>
@@ -32,6 +19,7 @@
         </include>
     </group>
 
+<!-- ROBOT ARGUMENT OPTIONS -->
     <group if="$(eval arg('robot') == 'nusim')">
         <include file="$(find nuturtle_description)/launch/load.launch">
             <arg name="use_rviz" value="false"/>
@@ -43,17 +31,23 @@
         </node>
     </group>
 
-    
+    <include file="$(find nuturtle_control)/launch/basic_remote.launch" if="$(eval arg('robot') != 'nusim')">
+        <arg name="robot" value="$(arg robot)"/>
+    </include>
 
+
+
+<!-- REQUIRED FOR BOTH -->
     <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control"/>
     <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
 
-    <!-- <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=red"/> -->
 
-    <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/> -->
-
+<!-- CMD_SRC OPTIONS -->
     <node type="circle_node" name="circle_node" pkg="nuturtle_control" if="$(eval arg('cmd_src') == 'circle')"/>
+    <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch" pass_all_args="true" if="$(eval arg('cmd_src') == 'teleop')"/>
 
+
+<!-- OTHER THINGS -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="odom_broadcaster" args="0 0 0 0 0 0 1 world odom" />
     
     <group if="$(arg use_rviz)">

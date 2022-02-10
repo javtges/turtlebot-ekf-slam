@@ -300,8 +300,6 @@ int main(int argc, char * argv[])
         transformStamped.transform.rotation.y = q.y();
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
-        // ROS_ERROR_STREAM("broadcasted");
-
 
         /// Send the transform and publish the JointState and the timestamp message.
         br.sendTransform(transformStamped);

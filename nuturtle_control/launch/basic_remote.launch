@@ -1,2 +1,11 @@
-<!-- BOILERPLATE FOR LATER!! -->
-<!-- http://wiki.ros.org/roslaunch/Tutorials/Roslaunch%20tips%20for%20larger%20projects -->
+<launch>
+    <arg name="robot" default="localhost" doc="Determines the hostname of the robot to run. The default is 'localhost'."/>
+
+    <machine name="turtlebot" user="msr" address="$(arg robot)" default="true" env-loader="$(find nuturtle_control)/loader.sh" />
+
+    <node name="serial_node" type="serial_node.py" package="rosserial_python">
+        <param name="port" value="/dev/ttyACM1"/>
+        <param name="baud" value="115200"/>
+    </node>
+
+</launch>
