@@ -40,16 +40,13 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     turtlelib::Twist2D twist;
     turtlelib::Q new_config;
 
-
-    // ROS_ERROR_STREAM("???????????????????");
-
     positions.resize(2);
     velocities.resize(2);
     positions = msg->position;
     velocities = msg->velocity;
 
     currentAngles.L = positions[0];
-    ROS_ERROR_STREAM(currentAngles.L);
+    // ROS_ERROR_STREAM(currentAngles.L);
     currentAngles.R = positions[1];
     currentSpeeds.Ldot = velocities[0];
     currentSpeeds.Rdot = velocities[1];
@@ -68,7 +65,7 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     // Tried: nextAngles, twist, current/lastangles
     new_config = drive.forward_kinematics(nextAngles);
 
-    ROS_ERROR_STREAM(new_config.x);
+    // ROS_ERROR_STREAM(new_config.x);
 
     odom.header.stamp = ros::Time::now();
     odom.header.frame_id = odom_frame;
@@ -115,10 +112,10 @@ int main(int argc, char * argv[])
     ros::NodeHandle n;
 
     /// Gets the required values from the parameter server. Default values are provided for frequency, x0, y0, and theta0.
-    n.param("frequency",frequency, 500);
-    n.param("x0", x_0, 0.0);
-    n.param("y0", y_0, 0.0);
-    n.param("theta0", theta_0, 0.0);
+    n.param("/nusim/frequency",frequency, 500);
+    n.param("/nusim/x0", x_0, 0.0);
+    n.param("/nusim/y0", y_0, 0.0);
+    n.param("/nusim/theta0", theta_0, 0.0);
     n.param("odom_id", odom_frame, std::string("odom"));
 
     turtlelib::Q initial_config;
@@ -156,7 +153,6 @@ int main(int argc, char * argv[])
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
     {
-
 
         turtle_config = drive.getConfig();
 

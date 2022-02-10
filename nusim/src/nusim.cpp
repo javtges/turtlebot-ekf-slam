@@ -233,9 +233,9 @@ int main(int argc, char * argv[])
     /// Gets the required values from the parameter server. Default values are provided for frequency, x0, y0, and theta0.
     int frequency;
     nh.param("frequency",frequency, 500);
-    nh.param("x0", x_0, 0.0);
-    nh.param("y0", y_0, 0.0);
-    nh.param("theta0", theta_0, 0.0);
+    nh.param("x0", x_0, -0.6);
+    nh.param("y0", y_0, 0.8);
+    nh.param("theta0", theta_0, 1.57);
     nh.param("x_length", x_length, 10.0);
     nh.param("y_length", y_length, 10.0);
 
@@ -261,28 +261,33 @@ int main(int argc, char * argv[])
     // MAKE SURE THESE STILL WORK EVENTUALLY
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
-
-    x = x_0; y = y_0; theta = theta_0;
+    x_0 = -0.6;
+    y_0 = 0.8;
+    
     ts.data = 0;
     wheel_angles.L = 0.0;
     wheel_angles.R = 0.0;
     wheel_angles_old = wheel_angles;
     turtle_config.theta = theta_0;
     turtle_config.x = x_0;
+    ROS_ERROR_STREAM(turtle_config.x);
     turtle_config.y = y_0;
     turtlelib::DiffDrive drive;
+    drive.setConfig(turtle_config);
 
     /// Populating the MarkerArray message and publishing it to display the markers.
     ma = addObstacles(radii, x_locs, y_locs);
     walls = addWalls(x_length, y_length);
     obs_pub.publish(ma);
     wall_pub.publish(walls);
+    static tf2_ros::TransformBroadcaster br;
+
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
     {
         // ROS_ERROR_STREAM("making broadcaster");
-        static tf2_ros::TransformBroadcaster br;
+        turtle_config = drive.getConfig();
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "world";
         transformStamped.child_frame_id = "red-base_footprint";
