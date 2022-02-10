@@ -229,11 +229,11 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES
-  loader.sh
+# install(FILES
+  # loader.sh
   # myfile2
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+  # DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 install(PROGRAMS
   loader.sh
