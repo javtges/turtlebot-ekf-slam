@@ -57,6 +57,10 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
     // ROS_ERROR_STREAM(speeds.left_velocity);
     // ROS_ERROR_STREAM(speeds.right_velocity);
 
+    //publish, sleep, spinOnce
+    // void callbacks, TEST_CASE with node handles, publishers, subscribers, SECTIONS with tests 
+    // .test file does something weird in cmakelists, launchfile that includes start robot nusim and then the tests.cpp file
+
     if(speeds.left_velocity > 256){
         speeds.left_velocity = 256;
     }

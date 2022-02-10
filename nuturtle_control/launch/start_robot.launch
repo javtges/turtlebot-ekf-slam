@@ -38,9 +38,16 @@
 
 
 <!-- REQUIRED FOR BOTH -->
-    <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control"/>
-    <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
 
+    <group if="$(eval arg('robot') != 'nusim')">
+        <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control" machine="turtlebot"/>
+        <node type="odometry_node" name="odometry_node" pkg="nuturtle_control" machine="turtlebot"/>
+    </group>
+
+    <group if="$(eval arg('robot') == 'nusim')">
+        <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control"/>
+        <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
+    </group>
 
 <!-- CMD_SRC OPTIONS -->
     <node type="circle_node" name="circle_node" pkg="nuturtle_control" if="$(eval arg('cmd_src') == 'circle')"/>

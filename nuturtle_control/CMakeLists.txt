@@ -58,8 +58,8 @@ tf2_ros)
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  SetPose.srv
   CircleControl.srv
+  SetPose.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -205,6 +205,7 @@ target_link_libraries(
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 install(TARGETS 
+  circle_node
   odometry_node
   turtle_interface_node # was $(PROJECT_NAME)_node here
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -235,6 +236,7 @@ install(DIRECTORY config/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
   # DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
+#catkin_lint: ignore_once wrong_bin_install_destination
 install(PROGRAMS
   loader.sh
   # myfile2
