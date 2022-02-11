@@ -28,63 +28,29 @@ static turtlelib::Q turtle_config;
 static turtlelib::Phidot wheel_speeds;
 static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
+static std::vector<double> positions, velocities;
 
 
-int toEncoderTicks(double radians){
-    return (int)(radians/encoder_ticks_to_rad) % 4096;
+void wheel_cmd_callback(const nuturtlebot_msgs::WheelCommands & msg){
+    
+    speeds.left_velocity = msg.left_velocity;
+    speeds.right_velocity = msg.right_velocity;
 }
 
-double toRadians(int ticks){
-    return ticks * encoder_ticks_to_rad;
-}
+void joint_state_callback(const sensor_msgs::JointState & msg){
 
-void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
-    turtlelib::Twist2D twist;
-    twist.xdot = msg->linear.x;
-    twist.ydot = msg->linear.y;
-    twist.thetadot = msg->angular.z;
-
-    // convert to wheel_cmd
-    wheel_speeds = drive.inverse_kinematics(twist);
-
-    speeds.left_velocity = wheel_speeds.Ldot/motor_cmd_to_radsec;
-    speeds.right_velocity = wheel_speeds.Rdot/motor_cmd_to_radsec;
-
-    if(speeds.left_velocity > 256){
-        speeds.left_velocity = 256;
-    }
-    if(speeds.left_velocity < -256){
-        speeds.left_velocity = -256;
-    }
-    if(speeds.right_velocity > 256){
-        speeds.right_velocity = 256;
-    }
-    if(speeds.right_velocity < -256){
-        speeds.right_velocity = -256;
-    }
-
-}
-
-void sensor_data_callback(const nuturtlebot_msgs::SensorData::ConstPtr& msg){
-    //Joint states aren't being published when there's no sensor data, so we get problems in the tf tree because it's incomplete
-    joint_states.header.stamp = ros::Time::now();
-    joint_states.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
-    joint_states.position = {toRadians(msg->left_encoder), toRadians(msg->right_encoder)};
-
-    joint_states.velocity = {wheel_speeds.Ldot, wheel_speeds.Rdot};
-    joint_states.effort = {0.0, 0.0};
-
+    positions.resize(2);
+    velocities.resize(2);
+    positions = msg.position;
+    velocities = msg.velocity;
 }
 
 
 TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interface]"){
 
-    // PUT NODEHANDLERS AND SUBSCRIBERS/PUBLISHERS HERE
-    // ros::init(argc, argv, "turtle_interface");
-    // ros::NodeHandle nh("~");
     ros::NodeHandle n;
 
-    frequency = 0.25;
+    frequency = 100;
     x_0 = 0.0;
     y_0 = 0.0;
     theta_0 = 0.0;
@@ -97,16 +63,16 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
     ros::Rate r(frequency); 
     
     ros::Publisher wheel_speed_pub = n.advertise<nuturtlebot_msgs::WheelCommands>("wheel_cmd",100);
-    // ros::Subscriber wheel_speed_sub = n.subscribe("wheel_cmd",100,wheel_cmd_callback);
+    ros::Subscriber wheel_speed_sub = n.subscribe("wheel_cmd",100,wheel_cmd_callback);
 
     ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("red/joint_states",100);
-    // ros::Publisher joint_state_sub = n.subscribe("red/joint_states",100,joint_state_callback);
+    ros::Subscriber joint_state_sub = n.subscribe("red/joint_states",100,joint_state_callback);
 
     ros::Publisher cmd_vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel",100);
-    ros::Subscriber cmd_vel_sub = n.subscribe("cmd_vel",100, cmd_vel_callback);
+    // ros::Subscriber cmd_vel_sub = n.subscribe("cmd_vel",100, cmd_vel_callback);
 
     ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
-    ros::Subscriber sensor_data_sub = n.subscribe("sensor_data",100, sensor_data_callback);
+    // ros::Subscriber sensor_data_sub = n.subscribe("sensor_data",100, sensor_data_callback);
 
     joint_states.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
     joint_states.position = {0.0, 0.0};
@@ -126,10 +92,12 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
         input.angular.y = 0.0;
         input.angular.z = 0.0;
 
-        cmd_vel_pub.publish(input);
-        
-        r.sleep();
-        ros::spinOnce();
+        for (int i=0; i<100; i++){
+            cmd_vel_pub.publish(input);
+            r.sleep();
+            ros::spinOnce();
+
+        }
 
         CHECK( speeds.left_velocity == Approx(252));
         CHECK( speeds.right_velocity == Approx(252));
@@ -146,10 +114,12 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
         input.angular.y = 0.0;
         input.angular.z = 0.2;
 
-        cmd_vel_pub.publish(input);
-        
-        r.sleep();
-        ros::spinOnce();
+        for (int i=0; i<100; i++){
+            cmd_vel_pub.publish(input);
+            r.sleep();
+            ros::spinOnce();
+
+        }
 
         CHECK( speeds.left_velocity == Approx(-20));
         CHECK( speeds.right_velocity == Approx(20));
@@ -161,13 +131,15 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
         input.left_encoder = 2048;
         input.right_encoder = 2048;
 
-        sensor_data_pub.publish(input);
-        
-        r.sleep();
-        ros::spinOnce();
+        for (int i=0; i<100; i++){
+            sensor_data_pub.publish(input);
+            r.sleep();
+            ros::spinOnce();
 
-        CHECK( joint_states.position[0] == Approx(3.14159).margin(0.01));
-        CHECK( joint_states.position[1] == Approx(3.14159).margin(0.01));
+        }
+
+        CHECK( positions[0] == Approx(3.14159).margin(0.01));
+        CHECK( positions[1] == Approx(3.14159).margin(0.01));
     }
 
 }

@@ -39,23 +39,14 @@ double toRadians(int ticks){
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
     turtlelib::Twist2D twist;
     twist.xdot = msg->linear.x;
-    // ROS_ERROR_STREAM(twist.xdot);
     twist.ydot = msg->linear.y;
-    // ROS_ERROR_STREAM(twist.ydot);
     twist.thetadot = msg->angular.z;
-    // ROS_ERROR_STREAM(twist.thetadot);
 
     // convert to wheel_cmd
     wheel_speeds = drive.inverse_kinematics(twist);
 
-    // ROS_ERROR_STREAM(wheel_speeds.Ldot);
-    // ROS_ERROR_STREAM(wheel_speeds.Rdot);
-
     speeds.left_velocity = wheel_speeds.Ldot/motor_cmd_to_radsec;
     speeds.right_velocity = wheel_speeds.Rdot/motor_cmd_to_radsec;
-
-    // ROS_ERROR_STREAM(speeds.left_velocity);
-    // ROS_ERROR_STREAM(speeds.right_velocity);
 
     //publish, sleep, spinOnce
     // void callbacks, TEST_CASE with node handles, publishers, subscribers, SECTIONS with tests 
