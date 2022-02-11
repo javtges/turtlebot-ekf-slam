@@ -156,10 +156,7 @@ int main(int argc, char * argv[])
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
 
-        ROS_ERROR_STREAM(transformStamped);
-
         br.sendTransform(transformStamped);
-
 
         odom.header.stamp = ros::Time::now();
         odom.header.frame_id = odom_frame;

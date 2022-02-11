@@ -24,7 +24,7 @@
 
 static int frequency;
 static geometry_msgs::Twist twist;
-static bool stop_flag = false, go_flag = false;
+static bool stop_flag = false, go_flag = true;
 
 
 bool controlCallback(nuturtle_control::CircleControl::Request &Request, nuturtle_control::CircleControl::Response &Response){

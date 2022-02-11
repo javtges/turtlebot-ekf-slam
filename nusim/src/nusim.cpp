@@ -50,14 +50,11 @@ static double x, y, theta, x_length, y_length;
 static double x_0, y_0, theta_0;
 static double left_velocity, right_velocity;
 static double motor_cmd_to_radsec, encoder_ticks_to_rad;
-std::vector<double> radii;
-std::vector<double> x_locs;
-std::vector<double> y_locs;
-std::vector<double> motor_cmd_max;
-turtlelib::Phi wheel_angles, wheel_angles_old;
-turtlelib::Phidot wheel_speeds;
-turtlelib::Q turtle_config;
-
+static turtlelib::DiffDrive drive;
+static std::vector<double> radii, x_locs, y_locs, motor_cmd_max;
+static turtlelib::Phi wheel_angles, wheel_angles_old;
+static turtlelib::Phidot wheel_speeds;
+static turtlelib::Q turtle_config;
 
 /// \brief The callback function for the reset service. Resets the timestamp counter and teleports the turtlebot back to its starting pose.
 /// \param &Request - the inputs to the service. For this type there are none.
@@ -65,9 +62,12 @@ turtlelib::Q turtle_config;
 /// returns true if executed successfully
 bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response &){
     ts.data = 0;
-    x = x_0;
-    y = y_0;
-    theta = theta_0;
+    turtle_config.x = x_0;
+    turtle_config.y = y_0;
+    turtle_config.theta = theta_0;
+
+    drive.setConfig(turtle_config);
+    
     return true;
 }
 
@@ -76,9 +76,12 @@ bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response 
 /// \param &Response - the outputs of the service. For this type there are none.
 /// returns true if executed successfully
 bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Response &){
-    x = Request.x;
-    y = Request.y;
-    theta = Request.theta;
+    turtle_config.x = Request.x;
+    turtle_config.y = Request.y;
+    turtle_config.theta = Request.theta;
+
+    drive.setConfig(turtle_config);
+
     return true;
 }
 
@@ -271,7 +274,6 @@ int main(int argc, char * argv[])
     turtle_config.theta = theta_0;
     turtle_config.x = x_0;
     turtle_config.y = y_0;
-    turtlelib::DiffDrive drive;
     drive.setConfig(turtle_config);
 
     /// Populating the MarkerArray message and publishing it to display the markers.
