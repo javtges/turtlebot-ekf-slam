@@ -20,8 +20,17 @@
 #include <nuturtlebot_msgs/SensorData.h>
 #include <nuturtlebot_msgs/WheelCommands.h>
 
+/// \file
+/// \brief The testfile for the odometry node.
+///
+/// PUBLISHES:
+///     /cmd_vel (geometry_msgs::Twist): The commanded twist of the turtlebot.
+///     /sensor_data (nuturtlebot_msgs::SensorData): The sensor data of the turtlebot. Here, only the wheel encoder ticks are used.
+/// SUBSCRIBES:
+///     /wheel_cmd (nuturtlebot_msgs::WheelCommands): The commanded wheel velocities in dynamixel ticks of the turtlebot.
+///     /red/joint_states (sensor_msgs::JointStates): The joint states of the turtlebot.
 
-static double x_0, y_0, theta_0, x_length, y_length, motor_cmd_to_radsec, encoder_ticks_to_rad;
+static double x_0, y_0, theta_0, motor_cmd_to_radsec, encoder_ticks_to_rad;
 static double frequency;
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
@@ -30,13 +39,16 @@ static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 static std::vector<double> positions, velocities;
 
-
+/// \brief The callback function for the wheel_cmd subscriber
+/// Reads the WheelCommand data required for the test cases
 void wheel_cmd_callback(const nuturtlebot_msgs::WheelCommands & msg){
     
     speeds.left_velocity = msg.left_velocity;
     speeds.right_velocity = msg.right_velocity;
 }
 
+/// \brief The callback function for the joint_state subscriber
+/// Reads the JointState data required for the test cases
 void joint_state_callback(const sensor_msgs::JointState & msg){
 
     positions.resize(2);
@@ -44,7 +56,6 @@ void joint_state_callback(const sensor_msgs::JointState & msg){
     positions = msg.position;
     velocities = msg.velocity;
 }
-
 
 TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interface]"){
 
@@ -62,17 +73,11 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
     /// Setting up the looping rate and the required subscribers.
     ros::Rate r(frequency); 
     
-    ros::Publisher wheel_speed_pub = n.advertise<nuturtlebot_msgs::WheelCommands>("wheel_cmd",100);
     ros::Subscriber wheel_speed_sub = n.subscribe("wheel_cmd",100,wheel_cmd_callback);
-
-    ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("red/joint_states",100);
     ros::Subscriber joint_state_sub = n.subscribe("red/joint_states",100,joint_state_callback);
 
     ros::Publisher cmd_vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel",100);
-    // ros::Subscriber cmd_vel_sub = n.subscribe("cmd_vel",100, cmd_vel_callback);
-
     ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
-    // ros::Subscriber sensor_data_sub = n.subscribe("sensor_data",100, sensor_data_callback);
 
     joint_states.name = {"red-wheel_left_joint", "red-wheel_right_joint"};
     joint_states.position = {0.0, 0.0};

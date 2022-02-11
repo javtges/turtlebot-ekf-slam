@@ -32,10 +32,16 @@
 ///     ~x0 (double): The starting x coordinate of the turtlebot.
 ///     ~y0 (double): The starting y coordinate of the turtlebot.
 ///     ~theta0 (double): The starting orientation (yaw) of the turtlebot.
+///     ~motor_cmd_to_radsec (double): The motor command to radians/second conversion factor.
+///     ~encoder_ticks_to_rad (double): The encoder ticks to radians conversion factor.
+///     ~motor_cmd_max (std::vector<double>): The maximum and minimum values of dynamixel ticks.
 /// PUBLISHES:
 ///     /nusim/obstacles (visualization_msgs::MarkerArray): Publishes and displays cylindrical markers in rviz that represents obstacles for the turtlebot. This is a latched publisher that publishes once with the markers being permenant.
-///     /red/joint_states (sensor_msgs::JointState): Publishes joint states to the left and right wheels for the red turtlebot. Currently, joint states of 0 are published. This publishes 500 times per second.
 ///     /nusim/timestep (std_msgs::UInt64): Increments a 64-bit int that acts as the timestamp for the simulation. This timestamp updates 500 times per second.
+///     /nusim/walls (visualization_msgs::MarkerArray): Publishes and displays rectangluar markers in rviz that represents walls for the turtlebot. This is a latched publisher that publishes once with the markers being permenant.
+///     /sensor_data (nuturtlebot_msgs::SensorData): Publishes encoder data according to wheel speeds and angles.
+/// SUBSCRIBES:
+///     /wheel_cmd (nuturtlebot_msgs::WheelCommands): The wheel velocities in dynamixel ticks.
 /// SERVICES:
 ///     reset (std_srvs::Empty): teleports the turtlebot back to its starting position. additionally, resets the timestamp counter.
 ///     teleport (nusim::teleport): teleports the turtlebot to a given x, y, and theta pose.
@@ -46,7 +52,7 @@ static sensor_msgs::JointState jointState;
 static geometry_msgs::TransformStamped transformStamped;
 static visualization_msgs::MarkerArray ma, walls;
 static nuturtlebot_msgs::SensorData sensor_data;
-static double x, y, theta, x_length, y_length;
+static double x_length, y_length;
 static double x_0, y_0, theta_0;
 static double left_velocity, right_velocity;
 static double motor_cmd_to_radsec, encoder_ticks_to_rad;
@@ -60,14 +66,14 @@ static turtlelib::Q turtle_config;
 /// \param &Request - the inputs to the service. For this type there are none.
 /// \param &Response - the outputs of the service. For this type there are none.
 /// returns true if executed successfully
-bool resetCallback(std_srvs::Empty::Request &Request, std_srvs::Empty::Response &){
+bool resetCallback(std_srvs::Empty::Request &, std_srvs::Empty::Response &){
     ts.data = 0;
     turtle_config.x = x_0;
     turtle_config.y = y_0;
     turtle_config.theta = theta_0;
 
     drive.setConfig(turtle_config);
-    
+
     return true;
 }
 
@@ -85,6 +91,8 @@ bool teleportCallback(nusim::teleport::Request &Request, nusim::teleport::Respon
     return true;
 }
 
+/// \brief The callback function for the wheel_command subscriber
+/// Sets the wheel_speeds variable to the current wheel speeds in radians/second
 void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
 
     left_velocity = msg->left_velocity;
@@ -92,15 +100,20 @@ void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
     
     wheel_speeds.Ldot = left_velocity * motor_cmd_to_radsec;
     wheel_speeds.Rdot = right_velocity * motor_cmd_to_radsec;
-    // ROS_ERROR_STREAM("wheelspeeds in nusim");
-    // ROS_ERROR_STREAM(wheel_speeds.Ldot);
-    // ROS_ERROR_STREAM(wheel_speeds.Rdot);
+
 }
 
+/// \brief Converts a radians measurement to turtlebot3 wheel encoder ticks.
+/// \param radians - the angle in radians
+/// returns the corresponding amount of encoder ticks
 int toEncoderTicks(double radians){
     return (int)(radians/encoder_ticks_to_rad) % 4096;
 }
 
+
+/// \brief Converts an encoder ticks measurement to radians.
+/// \param ticks - the angle in encoder ticks
+/// returns the corresponding amount of radians
 double toRadians(int ticks){
     return ticks * encoder_ticks_to_rad;
 }
@@ -147,6 +160,11 @@ visualization_msgs::MarkerArray addObstacles(std::vector<double> radii, std::vec
 
 }
 
+
+/// \brief Populates a MarkerArray message with the walls in the parameter server as specified by the yaml.
+/// \param x_length - the x (interior) dimension of the turtlebot arena
+/// \param y_length - the y (interior) dimension of the turtlebot arena
+/// returns the resulting MarkerArray ROS message.
 visualization_msgs::MarkerArray addWalls(double x_length, double y_length){
 
     int l = 4;
@@ -249,23 +267,17 @@ int main(int argc, char * argv[])
     n.getParam("encoder_ticks_to_rad", encoder_ticks_to_rad);
     n.getParam("motor_cmd_max", motor_cmd_max);
 
-    /// Setting up the looping rate and the required subscribers.
+    /// Setting up the looping rate and the required subscribers/publishers.
     ros::Rate r(frequency); 
     ros::Publisher ts_pub = nh.advertise<std_msgs::UInt64>("timestep", frequency);
-    // ros::Publisher joint_state_pub = n.advertise<sensor_msgs::JointState>("joint_states",10);
     ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
-    
-    
     ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
     ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
-    // MAKE SURE THESE STILL WORK EVENTUALLY
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
-    x_0 = -0.6;
-    y_0 = 0.8;
     
     ts.data = 0;
     wheel_angles.L = 0.0;
@@ -276,7 +288,7 @@ int main(int argc, char * argv[])
     turtle_config.y = y_0;
     drive.setConfig(turtle_config);
 
-    /// Populating the MarkerArray message and publishing it to display the markers.
+    /// Populating the MarkerArray messages and publishing it to display the markers.
     ma = addObstacles(radii, x_locs, y_locs);
     walls = addWalls(x_length, y_length);
     obs_pub.publish(ma);
@@ -308,25 +320,18 @@ int main(int argc, char * argv[])
         ts_pub.publish(ts);
 
 
-
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
         // Convert ticks to radians/second, use the frequency to determine how far the wheels turn during that time
-        // ROS_ERROR_STREAM("making sensor data");
-        // consider making this +=
         sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot/frequency) + wheel_angles_old.L);
         sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot/frequency) + wheel_angles_old.R);
-        // ROS_ERROR_STREAM(turtle_config);
         sensor_data_pub.publish(sensor_data);
-        // ROS_ERROR_STREAM("published sensor data");
-        // Normalize angle MAY be wrong
+
         wheel_angles.L = (wheel_speeds.Ldot/frequency) + wheel_angles_old.L;
         wheel_angles.R = (wheel_speeds.Rdot/frequency) + wheel_angles_old.R;
 
-        // make this update properly and then make the broadcaster work properly with the config
         turtle_config = drive.forward_kinematics(wheel_angles);
 
         wheel_angles_old = wheel_angles;
-
 
         // Use forward kinematics from DiffDrive to update the position of the robot
 

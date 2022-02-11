@@ -3,9 +3,13 @@
 #include <cmath>
 #include "turtlelib/rigid2d.hpp"
 #include "turtlelib/diff_drive.hpp"
+/// \file
+/// \brief The corresponding cpp file for "diff_drive.hpp", for differential drive robot kinematics.
+
 
 namespace turtlelib{
 
+    /// \brief initializes an empty diffdrive object
     DiffDrive::DiffDrive(){
         phi.L = 0;
         phi.R = 0;
@@ -16,9 +20,11 @@ namespace turtlelib{
         phidot.Rdot = 0;
     }
     
+    /// \brief calculate the forward kinematics of the robot
+    /// \param twist - the instanteous twist of the robot
+    /// \return the updated turtlebot configuration
     Q DiffDrive::forward_kinematics(Twist2D twist) {
-        // Given a twist and an old Q, make a new Q
-        // Maybe overload with just a twist?
+
         Transform2D Tbb_prime, Twb_prime;
 
         Tbb_prime = integrate_twist(twist);
@@ -37,6 +43,10 @@ namespace turtlelib{
         return q;
     }
     
+    /// \brief calculate the forward kinematics of the robot
+    /// \param twist - the instanteous twist of the robot
+    /// \param current_config - the current configuration of the robot (if not already in the object)
+    /// \return the updated turtlebot configuration    
     Q DiffDrive::forward_kinematics(Q current_config, Twist2D twist) {
         // Given a twist and an old Q, make a new Q
         // Maybe overload with just a twist?
@@ -55,6 +65,10 @@ namespace turtlelib{
         return q;
     }
 
+
+    /// \brief produces a twist from given wheel speeds
+    /// \param speeds - the wheel speeds
+    /// \return a twist from the wheel speeds
     Twist2D DiffDrive::get_twist_from_angles(Phidot speeds){
         // returns the instaneous twist
 
@@ -67,6 +81,9 @@ namespace turtlelib{
         return twist;
     }
 
+    /// \brief calculate the forward kinematics of the robot
+    /// \param next_angle - the next wheel angles of the turtlebot after a timestep. Uses internal private variables to perform the rest of the calculations/
+    /// returns the updated turtlebot configuration
     Q DiffDrive::forward_kinematics(Phi next_angle) {
         // Given a twist and an old Q, make a new Q
         // Updates wheel angles and wheel speeds as well
@@ -104,6 +121,11 @@ namespace turtlelib{
         return q;
     }
 
+    /// \brief calculate the forward kinematics of the robot
+    /// \param current_config - the current configuration of the robot (if not already in the object)
+    /// \param prev_angle - the previous (or current) wheel angles
+    /// \param next_angle - the next wheel angles of the turtlebot after a timestep
+    /// \return the updated turtlebot configuration
     Q DiffDrive::forward_kinematics(Q current_config, Phi prev_angle, Phi next_angle) {
         // Given a twist and an old Q, make a new Q
 
@@ -139,6 +161,11 @@ namespace turtlelib{
         return q;
     }
 
+
+    /// \brief calculate the forward kinematics of the robot
+    /// \param wheel_speeds - the instanteous wheel speeds of the robot
+    /// \param current_config - the current configuration of the robot (if not already in the object)
+    /// \return the updated turtlebot configuration
     Q DiffDrive::forward_kinematics(Q current_config, Phidot wheel_speeds) {
 
         Transform2D Tbb_prime(0);
@@ -168,6 +195,10 @@ namespace turtlelib{
         return q;
     }
 
+
+    /// \brief calculate the forward kinematics of the robot
+    /// \param twist - the instanteous twist of the robot
+    /// \return the updated turtlebot configuration
     Phidot DiffDrive::inverse_kinematics(Twist2D twist) {
         phidot.Ldot = ((-d)*twist.thetadot + twist.xdot)/r;
         phidot.Rdot = ((d)*twist.thetadot + twist.xdot)/r;
@@ -179,6 +210,11 @@ namespace turtlelib{
         return phidot; //this goes to cmd_vel I guess?
     }
 
+
+    /// \brief updates the wheel angles given current angles and a twist
+    /// \param twist - the instanteous body twist of the robot
+    /// \param angles - the current wheel angles of the robot
+    /// \return the updated angles
     Phi DiffDrive::update_phis(Twist2D twist, Phi angles){
             // call inverse_kinematics
         Phidot rates;
@@ -192,21 +228,38 @@ namespace turtlelib{
         return phi;
     }
 
+    /// \brief sets the configuration of the robot
+    /// \param config - the configuration of the robot
     void DiffDrive::setConfig(Q config){
         q = config;
     }
+
+    /// \brief sets the wheel angles of the robot
+    /// \param angles - the wheel angles of the robot
     void DiffDrive::setAngles(Phi angles){
         phi = angles;
     }
+
+    /// \brief sets the wheel speeds of the robot
+    /// \param speeds - the wheel speeds of the robot
     void DiffDrive::setSpeeds(Phidot speeds){
         phidot = speeds;
     }
+
+    /// \brief returns the current robot configuration
+    /// \return the current robot configuration
     Q DiffDrive::getConfig(){
         return q;
     }
+
+    /// \brief returns the current wheel angles
+    /// \return the current wheel angles
     Phi DiffDrive::getAngles(){
         return phi;
     }
+
+    /// \brief returns the current wheel speeds
+    /// \return the current wheel speeds
     Phidot DiffDrive::getSpeeds(){
         return phidot;
     }

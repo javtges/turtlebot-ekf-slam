@@ -21,8 +21,28 @@
 #include <nuturtlebot_msgs/WheelCommands.h>
 #include "nuturtle_control/SetPose.h"
 
+/// \file
+/// \brief Handles the odometry to allow the blue turtlebot to move in simulation and real life.
+///
+/// PARAMETERS:
+///     /nusim/frequency (parameter_type): description of the parameter
+///     /nusim/frequency/x0 (double): The starting x coordinate of the turtlebot.
+///     /nusim/frequency/y0 (double): The starting y coordinate of the turtlebot.
+///     /nusim/frequency/theta0 (double): The starting orientation (yaw) of the turtlebot.
+///     /odom_id (std::string): The name of the odometry frame, coincident with the world frame.
+///     /body_ (std::string): The name of the body frame for the odometry.
+///     /wheel_left (std::string): The name of the left wheel joint.
+///     /wheel_right (std::string): The name of the right wheel joint.
+/// PUBLISHES:
+///     /odom (nav_msgs::Odometry): The odometry of the blue turtlebot. Publishes 500 times per second.
+/// SUBSCRIBES:
+///     /red/joint_states (sensor_msgs::JointStates): The joint states of the turtlebot.
+/// SERVICES:
+///     set_pose (nuturtle_control::SetPose): Changes the odometry so that the robot thinks it's at the given pose.
+
+
 static std::string odom_frame, body_id, wheel_left, wheel_right;
-static double x_0, y_0, theta_0, motor_cmd_to_radsec, encoder_ticks_to_rad;
+static double x_0, y_0, theta_0;
 static int frequency;
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
@@ -32,6 +52,9 @@ static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
 static std::vector<double> positions, velocities;
 
+
+/// \brief The callback function for the joint_state subscriber
+/// Calculates the new turtlebot configuration, determines the instanteous twist, and begins populating the odometry message.
 void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     // Update internal odometry state
 
@@ -46,7 +69,6 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     velocities = msg->velocity;
 
     currentAngles.L = positions[0];
-    // ROS_ERROR_STREAM(currentAngles.L);
     currentAngles.R = positions[1];
     currentSpeeds.Ldot = velocities[0];
     currentSpeeds.Rdot = velocities[1];
@@ -54,18 +76,12 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     drive.setSpeeds(currentSpeeds);
     drive.setAngles(currentAngles);
 
-    // ROS_ERROR_STREAM("!!!!!!!!!!!!!!!!!!");
-    // MAYBE NEED TO HANDLE ANGLE ROLLOVER HERE????
-
     nextAngles.L = (currentSpeeds.Ldot/frequency) + currentAngles.L;
     nextAngles.R = (currentSpeeds.Rdot/frequency) + currentAngles.R;
 
     twist = drive.get_twist_from_angles(currentSpeeds);
-    // UNCOMMENT THIS LATER
-    // Tried: nextAngles, twist, current/lastangles
-    drive.forward_kinematics(nextAngles);
 
-    // ROS_ERROR_STREAM(new_config.x);
+    drive.forward_kinematics(nextAngles);
 
     odom.twist.twist.linear.x = twist.xdot;
     odom.twist.twist.linear.y = twist.ydot;
@@ -74,12 +90,15 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     odom.twist.twist.angular.y = 0;
     odom.twist.twist.angular.z = twist.thetadot;
 
-    // use delta of wheel positions (with no 2pi rollover??) to find the new configuration
-    // use the twist velocity from the wheelspeeds to set the odom twist
-
 }
 
-bool set_poseCallback(nuturtle_control::SetPose::Request &Request, nuturtle_control::SetPose::Response &Response){
+
+/// \brief The callback for the set_pose service
+/// Sets the new configuration of the turtlebot to the service request data
+/// \param &Request - the inputs to the service. For this type there is an x, y, and theta float64 input.
+/// \param &Response - the outputs of the service. For this type there are none.
+/// returns true if executed successfully
+bool set_poseCallback(nuturtle_control::SetPose::Request &Request, nuturtle_control::SetPose::Response &){
     // Reset the position of the odometry according to the request.
     turtlelib::Q newPose;
     newPose.x = Request.x;
@@ -90,7 +109,7 @@ bool set_poseCallback(nuturtle_control::SetPose::Request &Request, nuturtle_cont
     return true;
 }
 
-
+/// The main function and loop
 int main(int argc, char * argv[])
 {
     /// Initalize the node and the nodehandler, one is public and one is private.
@@ -141,8 +160,10 @@ int main(int argc, char * argv[])
     while(ros::ok())
     {
 
+        /// Get the current config of the turtlebot
         turtle_config = drive.getConfig();
 
+        /// Make the transform from the odom frame to the body frame
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = odom_frame;
         transformStamped.child_frame_id = body_id;
@@ -158,6 +179,8 @@ int main(int argc, char * argv[])
 
         br.sendTransform(transformStamped);
 
+
+        /// Make and publish the odometry message using the current blue turtle configuration
         odom.header.stamp = ros::Time::now();
         odom.header.frame_id = odom_frame;
         odom.child_frame_id = body_id;

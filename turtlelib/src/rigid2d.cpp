@@ -9,8 +9,7 @@
 namespace turtlelib{
 
 
-    /// \brief defines a Transform2D object with a Vector2D translation
-    /// \param trans - input Vector2D with x and y translational components
+    /// \brief defines an empty Transform2D object
     Transform2D::Transform2D(){
         T[0][0] = 1;
         T[1][0] = 0;
@@ -23,6 +22,8 @@ namespace turtlelib{
         T[2][2] = 1;
     }
     
+    /// \brief defines a Transform2D object with a Vector2D translation
+    /// \param trans - input Vector2D with x and y translational components
     Transform2D::Transform2D(Vector2D trans){
 
         T[0][0] = 1;
@@ -95,6 +96,9 @@ namespace turtlelib{
         return output;
     }
 
+    /// \brief normalizes an angle to (-PI,PI] radians
+    /// \param rad - the angle to be normalized
+    /// \return the normalized angle
     double normalize_angle(double rad){
         long double d = std::fmod(rad-PI, 2*PI);
         if (d > 0){
@@ -176,6 +180,9 @@ namespace turtlelib{
         return *this;
     }
 
+    /// \brief add two vectors together, returning their composition
+    /// \param rhs - the right hand operand
+    /// \return the addition of the two vectors
     Vector2D & Vector2D::operator+=(const Vector2D & rhs){
 
         this->x += rhs.x;
@@ -183,6 +190,9 @@ namespace turtlelib{
         return *this;
     }
 
+    /// \brief subtracts two vectors, returning their composition
+    /// \param rhs - the right hand operand
+    /// \return the difference of the two vectors
     Vector2D & Vector2D::operator-=(const Vector2D & rhs){
 
         this->x -= rhs.x;
@@ -190,6 +200,9 @@ namespace turtlelib{
         return *this;
     }
 
+    /// \brief multiplies a vector by a scalar, returning their composition
+    /// \param rhs - the right hand operand
+    /// \return the product of the vector and scalar
     Vector2D & Vector2D::operator*=(const double & rhs){
 
         this->x *= rhs;
@@ -197,32 +210,59 @@ namespace turtlelib{
         return *this;
     }
 
+    /// \brief add two vectors together, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the addition of the two vectors
     Vector2D operator+(Vector2D lhs, const Vector2D & rhs){
         return lhs+=rhs;
     }
 
+    /// \brief subtracts two vectors, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the difference of the two vectors
     Vector2D operator-(Vector2D lhs, const Vector2D & rhs){
         return lhs-=rhs;
     }
 
+    /// \brief multiply a vector by a scalar, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the resulting vector
     Vector2D operator*(Vector2D lhs, const double & rhs){
         return lhs*=rhs;
     }
 
+    /// \brief multiply a vector by a scalar, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the resulting vector
     Vector2D operator*(const double & lhs, Vector2D rhs){
         return rhs*=lhs;
     }
 
+    /// \brief computes the dot product of two vectors
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the resulting double of the dot product
     double dot(Vector2D lhs, Vector2D rhs){
         double dot_product;
         dot_product = (lhs.x + rhs.x) + (lhs.y + rhs.y);
         return dot_product;
     }
 
+    /// \brief computes the magnitude of two vectors
+    /// \param vec - the vector
+    /// \return the magnitude of the vector
     double magnitude(Vector2D vec){
         return sqrt(vec.x*vec.x + vec.y*vec.y);
     }
 
+    /// /brief computes the angle between two vectors
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the double of the angle in radians
     double angle(Vector2D lhs, Vector2D rhs){
         return acos(dot(lhs,rhs) / magnitude(lhs) * magnitude(rhs));
     }
@@ -244,7 +284,9 @@ namespace turtlelib{
         return newrot;
     }
 
-
+    /// \brief integrate a twist over a timestep
+    /// \param twist - the twist to be integrated
+    /// \return the resulting transformation after the integration
     Transform2D integrate_twist(Twist2D twist){
         double theta;
         Vector2D d;

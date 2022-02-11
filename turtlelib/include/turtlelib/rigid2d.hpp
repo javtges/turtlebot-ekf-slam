@@ -79,8 +79,20 @@ namespace turtlelib
         /// \brief the y coordinate
         double y = 0.0;
 
+
+        /// \brief add two vectors together, returning their composition
+        /// \param rhs - the right hand operand
+        /// \return the addition of the two vectors
         Vector2D & operator+=(const Vector2D & rhs);
+
+        /// \brief subtracts two vectors, returning their composition
+        /// \param rhs - the right hand operand
+        /// \return the difference of the two vectors
         Vector2D & operator-=(const Vector2D & rhs);
+
+        /// \brief multiplies a vector by a scalar, returning their composition
+        /// \param rhs - the right hand operand
+        /// \return the product of the vector and scalar
         Vector2D & operator*=(const double & rhs);
     };
 
@@ -99,14 +111,31 @@ namespace turtlelib
 
     };
     
+    /// \brief normalizes an vector to a magnitude of 1
+    /// \param v - the vector to be normalized
+    /// \return the normalized vector
     Vector2D normalize(Vector2D v);
 
+    /// \brief normalizes an angle to (-PI,PI] radians
+    /// \param rad - the angle to be normalized
+    /// \return the normalized angle
     double normalize_angle(double rad);
 
+    /// \brief computes the dot product of two vectors
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the resulting double of the dot product
     double dot(Vector2D lhs, Vector2D rhs);
 
-    double magnitude(Vector2D lhs, Vector2D rhs);
+    /// \brief computes the magnitude of two vectors
+    /// \param vec - the vector
+    /// \return the magnitude of the vector
+    double magnitude(Vector2D vec);
 
+    /// /brief computes the angle between two vectors
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the double of the angle in radians
     double angle(Vector2D lhs, Vector2D rhs);
 
     /// \brief output a 2D Twist as [thetadot xdot ydot]
@@ -219,14 +248,35 @@ namespace turtlelib
     /// \param lhs - the left hand operand
     /// \param rhs - the right hand operand
     /// \return the composition of the two transforms
-    /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
 
+    /// \brief add two vectors together, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the addition of the two vectors
     Vector2D operator+(Vector2D lhs, const Vector2D & rhs);
+
+    /// \brief subtracts two vectors, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the difference of the two vectors
     Vector2D operator-(Vector2D lhs, const Vector2D & rhs);
+
+    /// \brief multiply a vector by a scalar, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the resulting vector
     Vector2D operator*(Vector2D lhs, const double & rhs);
+
+    /// \brief multiply a vector by a scalar, returning their composition
+    /// \param lhs - the left hand operand
+    /// \param rhs - the right hand operand
+    /// \return the resulting vector
     Vector2D operator*(const double & lhs, Vector2D rhs);
 
+    /// \brief integrate a twist over a timestep
+    /// \param twist - the twist to be integrated
+    /// \return the resulting transformation after the integration
     Transform2D integrate_twist(Twist2D twist);
 
 }

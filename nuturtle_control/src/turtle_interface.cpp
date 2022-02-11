@@ -19,7 +19,26 @@
 #include <nuturtlebot_msgs/SensorData.h>
 #include <nuturtlebot_msgs/WheelCommands.h>
 
-static double x_0, y_0, theta_0, x_length, y_length, motor_cmd_to_radsec, encoder_ticks_to_rad;
+
+/// \file
+/// \brief Handles publishers and subscribers to allow the turtlebot to move in simulation and real life.
+///
+/// PARAMETERS:
+///     /frequency (parameter_type): description of the parameter
+///     /x0 (double): The starting x coordinate of the turtlebot.
+///     /y0 (double): The starting y coordinate of the turtlebot.
+///     /theta0 (double): The starting orientation (yaw) of the turtlebot.
+///     /motor_cmd_to_radsec (double): The motor command to radians/second conversion factor.
+///     /encoder_ticks_to_rad (double): The encoder ticks to radians conversion factor.
+/// PUBLISHES:
+///     /wheel_cmd (nuturtlebot_msgs::WheelCommands): The wheel velocities in dynamixel ticks, this is read by the turtlebot to make the wheels move. Publishes 500 times per second.
+///     /red/joint_states (sensor_msgs::JointStates): The instanteous wheel positions and velocities of the turtlebot. This updates 500 times per second.
+/// SUBSCRIBES:
+///     /cmd_vel (geometry_msgs::Twist): The body twist of the turtlebot.
+///     /sensor_data (nuturtlebot_msgs::SensorData): The positions of the turtlebot wheels in encoder ticks, along with other unused sensor data from the turtlebot.
+
+
+static double x_0, y_0, theta_0, motor_cmd_to_radsec, encoder_ticks_to_rad;
 static int frequency;
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
@@ -27,15 +46,22 @@ static turtlelib::Phidot wheel_speeds;
 static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 
-
+/// \brief Converts a radians measurement to turtlebot3 wheel encoder ticks.
+/// \param radians - the angle in radians
+/// returns the corresponding amount of encoder ticks
 int toEncoderTicks(double radians){
     return (int)(radians/encoder_ticks_to_rad) % 4096;
 }
 
+/// \brief Converts an encoder ticks measurement to radians.
+/// \param ticks - the angle in encoder ticks
+/// returns the corresponding amount of radians
 double toRadians(int ticks){
     return ticks * encoder_ticks_to_rad;
 }
 
+/// \brief The callback function for the wheel_command subscriber
+/// Sets the turtlebot wheel speeds in dynamixel ticks that correspond to the twist given by the /cmd_vel topic
 void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
     turtlelib::Twist2D twist;
     twist.xdot = msg->linear.x;
@@ -67,6 +93,9 @@ void cmd_vel_callback(const geometry_msgs::Twist::ConstPtr& msg){
 
 }
 
+
+/// \brief The callback function for the sensor_data subscriber
+/// Converts the encoder data to joint state positions and velocities
 void sensor_data_callback(const nuturtlebot_msgs::SensorData::ConstPtr& msg){
     //Joint states aren't being published when there's no sensor data, so we get problems in the tf tree because it's incomplete
     joint_states.header.stamp = ros::Time::now();
@@ -87,14 +116,11 @@ int main(int argc, char * argv[])
     ros::NodeHandle nh("~");
     ros::NodeHandle n;
 
-
     /// Gets the required values from the parameter server. Default values are provided for frequency, x0, y0, and theta0.
     n.param("frequency",frequency, 500);
     n.param("x0", x_0, 0.0);
     n.param("y0", y_0, 0.0);
     n.param("theta0", theta_0, 0.0);
-    n.param("x_length", x_length, 10.0);
-    n.param("y_length", y_length, 10.0);
     
     if (!n.getParam("motor_cmd_to_radsec",motor_cmd_to_radsec)){
         ROS_ERROR_STREAM("Parameter motor_cmd_to_radsec not found!");
@@ -125,7 +151,7 @@ int main(int argc, char * argv[])
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
     {
-        wheel_speed_pub.publish(speeds); //wheel_cmd , make it within range
+        wheel_speed_pub.publish(speeds);
         joint_state_pub.publish(joint_states);
         ros::spinOnce();
         r.sleep();
