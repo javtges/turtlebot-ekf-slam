@@ -63,22 +63,9 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     twist = drive.get_twist_from_angles(currentSpeeds);
     // UNCOMMENT THIS LATER
     // Tried: nextAngles, twist, current/lastangles
-    new_config = drive.forward_kinematics(nextAngles);
+    drive.forward_kinematics(nextAngles);
 
     // ROS_ERROR_STREAM(new_config.x);
-
-    odom.header.stamp = ros::Time::now();
-    odom.header.frame_id = odom_frame;
-    odom.child_frame_id = body_id;
-    odom.pose.pose.position.x = new_config.x;
-    odom.pose.pose.position.y = new_config.y;
-    odom.pose.pose.position.z = 0;
-    tf2::Quaternion quat;
-    quat.setRPY(0,0,new_config.theta);
-    odom.pose.pose.orientation.x = quat.x();
-    odom.pose.pose.orientation.y = quat.y();
-    odom.pose.pose.orientation.z = quat.z();
-    odom.pose.pose.orientation.w = quat.w();
 
     odom.twist.twist.linear.x = twist.xdot;
     odom.twist.twist.linear.y = twist.ydot;
@@ -169,7 +156,23 @@ int main(int argc, char * argv[])
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
 
+        ROS_ERROR_STREAM(transformStamped);
+
         br.sendTransform(transformStamped);
+
+
+        odom.header.stamp = ros::Time::now();
+        odom.header.frame_id = odom_frame;
+        odom.child_frame_id = body_id;
+        odom.pose.pose.position.x = turtle_config.x;
+        odom.pose.pose.position.y = turtle_config.y;
+        odom.pose.pose.position.z = 0;
+        tf2::Quaternion quat;
+        quat.setRPY(0,0,turtle_config.theta);
+        odom.pose.pose.orientation.x = quat.x();
+        odom.pose.pose.orientation.y = quat.y();
+        odom.pose.pose.orientation.z = quat.z();
+        odom.pose.pose.orientation.w = quat.w();
 
         // ROS_WARN_STREAM("publishing odom??");
         odom_pub.publish(odom);

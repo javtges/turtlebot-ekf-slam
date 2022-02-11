@@ -8,6 +8,7 @@ project(nuturtle_control)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+catch_ros
 message_generation
 message_runtime
 nuturtlebot_msgs
@@ -188,6 +189,7 @@ target_link_libraries(
     turtlelib
 )
 
+
 #############
 ## Install ##
 #############
@@ -255,3 +257,17 @@ install(PROGRAMS
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+
+  catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
+  catch_add_rostest_node(turtle_odom_test_node tests/turtle_odom_test_node.cpp)
+
+  target_link_libraries(turtle_interface_test turtlelib ${catkin_LIBRARIES})
+  target_link_libraries(turtle_odom_test_node turtlelib ${catkin_LIBRARIES})
+
+  add_rostest(tests/turtle_interface.test DEPENDENCIES turtle_interface_test)
+  add_rostest(tests/turtle_odom.test DEPENDENCIES turtle_odom_test_node)
+
+endif()

@@ -270,7 +270,6 @@ int main(int argc, char * argv[])
     wheel_angles_old = wheel_angles;
     turtle_config.theta = theta_0;
     turtle_config.x = x_0;
-    ROS_ERROR_STREAM(turtle_config.x);
     turtle_config.y = y_0;
     turtlelib::DiffDrive drive;
     drive.setConfig(turtle_config);

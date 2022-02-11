@@ -1,0 +1,25 @@
+<launch>
+
+    <param name="body_id" value="blue-base_footprint"/>
+    <param name="odom_id" value="odom"/>
+    <param name="wheel_left" value="blue-wheel_left_joint"/>
+    <param name="wheel_right" value="blue-wheel_right_joint"/> 
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
+    <group ns="blue">
+
+        <param name="robot_description" command = "xacro $(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro color:=blue"/>
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+
+    </group>
+
+
+    <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
+
+
+    <test pkg="nuturtle_control" type="turtle_odom_test_node" test-name="turtle_odom_test_node"/>
+
+</launch>
