@@ -259,6 +259,7 @@ install(PROGRAMS
 # catkin_add_nosetests(test)
 
 if(CATKIN_ENABLE_TESTING)
+
   find_package(rostest REQUIRED)
 
   catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
