@@ -1,12 +1,14 @@
 #include <ros/ros.h>
 #include <iostream>
 #include <cmath>
+#include <random>
 #include <string>
 #include <std_msgs/UInt64.h>
 #include <ros/console.h>
 #include <sensor_msgs/JointState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_srvs/Empty.h>
+#include <tf2_ros/transform_listener.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -50,9 +52,9 @@
 static std_msgs::UInt64 ts;
 static sensor_msgs::JointState jointState;
 static geometry_msgs::TransformStamped transformStamped;
-static visualization_msgs::MarkerArray ma, walls;
+static visualization_msgs::MarkerArray ma, walls, sim_obstacles;
 static nuturtlebot_msgs::SensorData sensor_data;
-static double x_length, y_length;
+static double x_length, y_length, slip_min, slip_max, rand_slip, basic_sensor_variance, max_range;
 static double x_0, y_0, theta_0;
 static double left_velocity, right_velocity;
 static double motor_cmd_to_radsec, encoder_ticks_to_rad;
@@ -66,6 +68,18 @@ static turtlelib::Q turtle_config;
 /// \param &Request - the inputs to the service. For this type there are none.
 /// \param &Response - the outputs of the service. For this type there are none.
 /// returns true if executed successfully
+
+std::mt19937 & get_random()
+{
+    // static variables inside a function are created once and persist for the remainder of the program
+    static std::random_device rd{}; 
+    static std::mt19937 mt{rd()};
+    // we return a reference to the pseudo-random number genrator object. This is always the
+    // same object every time get_random is called
+    return mt;
+}
+
+
 bool resetCallback(std_srvs::Empty::Request &, std_srvs::Empty::Response &){
     ts.data = 0;
     turtle_config.x = x_0;
@@ -100,6 +114,19 @@ void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
     
     wheel_speeds.Ldot = left_velocity * motor_cmd_to_radsec;
     wheel_speeds.Rdot = right_velocity * motor_cmd_to_radsec;
+    // ROS_ERROR_STREAM(wheel_speeds.Ldot);
+
+    if (wheel_speeds.Ldot != 0.0){
+        std::normal_distribution<> d(1, 0.05); /// Args are mean,variance
+        wheel_speeds.Ldot *= d(get_random());
+        // ROS_ERROR_STREAM(wheel_speeds.Ldot);
+    }
+    if (wheel_speeds.Rdot != 0.0){
+        std::normal_distribution<> d(1, 0.05); /// Args are mean,variance
+        wheel_speeds.Rdot *= d(get_random());
+    }
+
+    
 
 }
 
@@ -243,6 +270,65 @@ visualization_msgs::MarkerArray addWalls(double x_length, double y_length){
 
 }
 
+visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std::vector<double> x_locs, std::vector<double> y_locs){
+
+    int l = radii.size();
+    visualization_msgs::MarkerArray maTemp;
+    maTemp.markers.resize(l);
+
+    turtlelib::Q current_config = drive.getConfig();
+    turtlelib::Vector2D current_vec = {current_config.x, current_config.y};
+    double current_theta = current_config.theta;
+    turtlelib::Transform2D Twr(current_vec,current_theta);
+    turtlelib::Transform2D Trw = Twr.inv();
+
+    turtlelib::Vector2D robot_to_world = Trw.translation();
+
+    double mag = std::sqrt(robot_to_world.x*robot_to_world.x + robot_to_world.y*robot_to_world.y);
+
+    for (int i=0; i<l; i++){
+
+        turtlelib::Vector2D markervec = {x_locs[i], y_locs[i]};
+        turtlelib::Transform2D Twm(markervec);
+        turtlelib::Transform2D Trm(0);
+        Trm = Trw * Twm;
+        turtlelib::Vector2D robot_to_marker = Trm.translation();
+
+        maTemp.markers[i].header.frame_id = "red-base_footprint";
+        maTemp.markers[i].header.stamp = ros::Time::now();
+        maTemp.markers[i].ns = "nusim_node";
+        maTemp.markers[i].id = i+9;
+        maTemp.markers[i].type = visualization_msgs::Marker::CYLINDER;
+        if (mag > max_range){
+            maTemp.markers[i].action = visualization_msgs::Marker::DELETE;
+        }
+        else{
+            maTemp.markers[i].action = visualization_msgs::Marker::ADD;
+            ROS_ERROR_STREAM("ADDING");
+        }
+        maTemp.markers[i].pose.position.x = robot_to_marker.x;
+        maTemp.markers[i].pose.position.z = 0.125;
+        maTemp.markers[i].pose.position.y = robot_to_marker.y;
+        maTemp.markers[i].pose.orientation.x = 0.0;
+        maTemp.markers[i].pose.orientation.y = 0.0;
+        maTemp.markers[i].pose.orientation.z = 0.0;
+        maTemp.markers[i].pose.orientation.w = 1.0;
+
+        maTemp.markers[i].scale.x = radii[i]*2;
+        maTemp.markers[i].scale.y = radii[i]*2;
+        maTemp.markers[i].scale.z = 0.25;
+
+        maTemp.markers[i].color.r = 0.0;
+        maTemp.markers[i].color.g = 1.0;
+        maTemp.markers[i].color.b = 0.0;
+        maTemp.markers[i].color.a = 1.0;
+        maTemp.markers[i].lifetime = ros::Duration(0);
+    }
+    return maTemp;
+
+}
+
+
 /// The main function and loop.
 int main(int argc, char * argv[])
 {
@@ -266,6 +352,11 @@ int main(int argc, char * argv[])
     n.getParam("motor_cmd_to_radsec", motor_cmd_to_radsec);
     n.getParam("encoder_ticks_to_rad", encoder_ticks_to_rad);
     n.getParam("motor_cmd_max", motor_cmd_max);
+    n.getParam("slip_min", slip_min);
+    n.getParam("slip_max", slip_max);
+    n.getParam("basic_sensor_variance", basic_sensor_variance);
+    n.getParam("max_range", max_range);
+
 
     /// Setting up the looping rate and the required subscribers/publishers.
     ros::Rate r(frequency); 
@@ -273,6 +364,7 @@ int main(int argc, char * argv[])
     ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
     ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
+    ros::Publisher fake_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("fake_sensor",10);
     ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
@@ -294,6 +386,9 @@ int main(int argc, char * argv[])
     obs_pub.publish(ma);
     wall_pub.publish(walls);
     static tf2_ros::TransformBroadcaster br;
+
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(slip_min,slip_max);
 
 
     /// The main loop of the node. Per the rate, this runs at 500Hz.
@@ -319,11 +414,14 @@ int main(int argc, char * argv[])
         // joint_state_pub.publish(jointState);
         ts_pub.publish(ts);
 
+        rand_slip = distribution(generator);
+        // ROS_ERROR_STREAM(rand_slip);
+
 
         // Update the wheel positions and publish them on red/sensor_data as a nuturtlebot/SensorData message.
         // Convert ticks to radians/second, use the frequency to determine how far the wheels turn during that time
-        sensor_data.left_encoder = toEncoderTicks((wheel_speeds.Ldot/frequency) + wheel_angles_old.L);
-        sensor_data.right_encoder = toEncoderTicks((wheel_speeds.Rdot/frequency) + wheel_angles_old.R);
+        sensor_data.left_encoder = toEncoderTicks(wheel_speeds.Ldot*rand_slip + (wheel_speeds.Ldot/frequency) + wheel_angles_old.L);
+        sensor_data.right_encoder = toEncoderTicks(wheel_speeds.Rdot*rand_slip + (wheel_speeds.Rdot/frequency) + wheel_angles_old.R);
         sensor_data_pub.publish(sensor_data);
 
         wheel_angles.L = (wheel_speeds.Ldot/frequency) + wheel_angles_old.L;
@@ -331,9 +429,18 @@ int main(int argc, char * argv[])
 
         turtle_config = drive.forward_kinematics(wheel_angles);
 
-        wheel_angles_old = wheel_angles;
+        // wheel_angles_old.L = wheel_angles.L + wheel_speeds.Ldot*rand_slip;
+        // wheel_angles_old.R = wheel_angles.R + wheel_speeds.Rdot*rand_slip;
+        wheel_angles_old.L = wheel_angles.L;
+        wheel_angles_old.R = wheel_angles.R;
 
         // Use forward kinematics from DiffDrive to update the position of the robot
+        if (ts.data % 100 == 0){
+            ROS_ERROR_STREAM(ts.data);
+            sim_obstacles = simulateObstacles(radii, x_locs, y_locs);
+            fake_sensor_pub.publish(sim_obstacles);
+        }
+
 
         /// Increment the timestamp, spin, and sleep for the 500Hz delay.
         ts.data++;

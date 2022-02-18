@@ -149,11 +149,11 @@
 
   <joint name="scan_joint" type="fixed">
     <parent link="$(arg color)-base_link"/>
-    <child link="base_scan"/>
+    <child link="$(arg color)-base_scan"/>
     <origin xyz="-0.032 0 0.172" rpy="0 0 0"/>
   </joint>
 
-  <link name="base_scan">
+  <link name="$(arg color)-base_scan">
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0"/>
       <geometry>

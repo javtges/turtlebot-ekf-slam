@@ -1,6 +1,7 @@
 <launch>
 
     <arg name="use_jsp" default="false" doc="Determines if the joint state publisher is to be launched. Default is false."/>
+    <arg name="use_config" default="diff_params.yaml" doc="Lets the user specify a .yaml file in the nusim/config/ folder to configure the simulator. Default is diff_params.yaml"/>
 
     
     <include file="$(find nuturtle_description)/launch/load.launch" pass_all_args = "true">
@@ -19,7 +20,7 @@
         <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
     </group>
 
-    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+    <rosparam command="load" file="$(find nuturtle_description)/config/$(arg use_config)"/>
 
 
 </launch>

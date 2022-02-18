@@ -66,11 +66,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_scan:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         imu_link:
           Alpha: 1
           Show Axes: false
@@ -80,6 +75,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         red-base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        red-base_scan:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -115,16 +115,16 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_scan:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         blue-base_footprint:
           Alpha: 1
           Show Axes: false
           Show Trail: false
         blue-base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        blue-base_scan:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -159,11 +159,11 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_scan:
-          Value: false
         blue-base_footprint:
           Value: true
         blue-base_link:
+          Value: false
+        blue-base_scan:
           Value: false
         blue-caster_back_link:
           Value: false
@@ -178,6 +178,8 @@ Visualization Manager:
         red-base_footprint:
           Value: true
         red-base_link:
+          Value: false
+        red-base_scan:
           Value: false
         red-caster_back_link:
           Value: false
@@ -198,6 +200,8 @@ Visualization Manager:
           odom:
             blue-base_footprint:
               blue-base_link:
+                blue-base_scan:
+                  {}
                 blue-caster_back_link:
                   {}
                 blue-wheel_left_link:
@@ -206,9 +210,9 @@ Visualization Manager:
                   {}
           red-base_footprint:
             red-base_link:
-              base_scan:
-                {}
               imu_link:
+                {}
+              red-base_scan:
                 {}
               red-caster_back_link:
                 {}
@@ -269,6 +273,14 @@ Visualization Manager:
       Topic: /odom
       Unreliable: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /nusim/fake_sensor
+      Name: MarkerArray
+      Namespaces:
+        nusim_node: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -297,7 +309,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.97127628326416
+      Distance: 4.569699764251709
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -313,9 +325,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7253981232643127
+      Pitch: 0.47039762139320374
       Target Frame: <Fixed Frame>
-      Yaw: 2.3504014015197754
+      Yaw: 2.4603893756866455
     Saved: ~
 Window Geometry:
   Displays:
