@@ -6,6 +6,7 @@
 #include <std_msgs/UInt64.h>
 #include <ros/console.h>
 #include <sensor_msgs/JointState.h>
+#include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_srvs/Empty.h>
 #include <tf2_ros/transform_listener.h>
@@ -58,11 +59,14 @@ static double x_length, y_length, slip_min, slip_max, rand_slip, basic_sensor_va
 static double x_0, y_0, theta_0;
 static double left_velocity, right_velocity;
 static double motor_cmd_to_radsec, encoder_ticks_to_rad;
+static double min_lidar_range, max_lidar_range, min_lidar_angle, max_lidar_angle, lidar_angle_resolution, lidar_range_resolution, lidar_noise_mean, lidar_noise_stddev;
+static int num_lidar_samples;
 static turtlelib::DiffDrive drive;
 static std::vector<double> radii, x_locs, y_locs, motor_cmd_max;
 static turtlelib::Phi wheel_angles, wheel_angles_old;
 static turtlelib::Phidot wheel_speeds;
 static turtlelib::Q turtle_config;
+static sensor_msgs::LaserScan laserScan;
 
 /// \brief The callback function for the reset service. Resets the timestamp counter and teleports the turtlebot back to its starting pose.
 /// \param &Request - the inputs to the service. For this type there are none.
@@ -117,13 +121,13 @@ void wheelCallback(const nuturtlebot_msgs::WheelCommands::ConstPtr& msg){
     // ROS_ERROR_STREAM(wheel_speeds.Ldot);
 
     if (wheel_speeds.Ldot != 0.0){
-        std::normal_distribution<> d(1, 0.05); /// Args are mean,variance
-        wheel_speeds.Ldot *= d(get_random());
+        std::normal_distribution<> d(0, 0.05); /// Args are mean,variance
+        wheel_speeds.Ldot += d(get_random());
         // ROS_ERROR_STREAM(wheel_speeds.Ldot);
     }
     if (wheel_speeds.Rdot != 0.0){
-        std::normal_distribution<> d(1, 0.05); /// Args are mean,variance
-        wheel_speeds.Rdot *= d(get_random());
+        std::normal_distribution<> d(0, 0.05); /// Args are mean,variance
+        wheel_speeds.Rdot += d(get_random());
     }
 
     
@@ -285,6 +289,7 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
     turtlelib::Vector2D robot_to_world = Trw.translation();
 
     double mag = std::sqrt(robot_to_world.x*robot_to_world.x + robot_to_world.y*robot_to_world.y);
+    std::normal_distribution<> d(0, basic_sensor_variance); /// Args are mean,variance
 
     for (int i=0; i<l; i++){
 
@@ -304,11 +309,11 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
         }
         else{
             maTemp.markers[i].action = visualization_msgs::Marker::ADD;
-            ROS_ERROR_STREAM("ADDING");
+            // ROS_ERROR_STREAM("ADDING");
         }
-        maTemp.markers[i].pose.position.x = robot_to_marker.x;
+        maTemp.markers[i].pose.position.x = robot_to_marker.x + d(get_random());
         maTemp.markers[i].pose.position.z = 0.125;
-        maTemp.markers[i].pose.position.y = robot_to_marker.y;
+        maTemp.markers[i].pose.position.y = robot_to_marker.y + d(get_random());
         maTemp.markers[i].pose.orientation.x = 0.0;
         maTemp.markers[i].pose.orientation.y = 0.0;
         maTemp.markers[i].pose.orientation.z = 0.0;
@@ -325,6 +330,140 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
         maTemp.markers[i].lifetime = ros::Duration(0);
     }
     return maTemp;
+
+}
+
+void simulateLidar(){
+//     # Single scan from a planar laser range-finder
+// #
+// # If you have another ranging device with different behavior (e.g. a sonar
+// # array), please find or create a different message, since applications
+// # will make fairly laser-specific assumptions about this data
+
+// Header header            # timestamp in the header is the acquisition time of 
+//                          # the first ray in the scan.
+//                          #
+//                          # in frame frame_id, angles are measured around 
+//                          # the positive Z axis (counterclockwise, if Z is up)
+//                          # with zero angle being forward along the x axis
+                         
+// float32 angle_min        # start angle of the scan [rad]
+// float32 angle_max        # end angle of the scan [rad]
+// float32 angle_increment  # angular distance between measurements [rad]
+
+// float32 time_increment   # time between measurements [seconds] - if your scanner
+//                          # is moving, this will be used in interpolating position
+//                          # of 3d points
+// float32 scan_time        # time between scans [seconds]
+
+// float32 range_min        # minimum range value [m]
+// float32 range_max        # maximum range value [m]
+
+// float32[] ranges         # range data [m] (Note: values < range_min or > range_max should be discarded)
+// float32[] intensities    # intensity data [device-specific units].  If your
+//                          # device does not provide intensities, please leave
+//                          # the array empty.
+
+    laserScan.header.frame_id = "red-base_scan";
+    laserScan.header.stamp = ros::Time::now();
+    laserScan.angle_min = 0.0; //min_lidar_angle;
+    laserScan.angle_max = 6.28319; // max_lidar_angle;
+    laserScan.angle_increment = 1; // lidar_angle_resolution; //This is in degrees
+    laserScan.time_increment = 1/1800;
+    laserScan.scan_time = 1/5;
+    laserScan.range_min = 0.120; // min_lidar_range;
+    laserScan.range_max = 3.5; // max_lidar_range;
+    std::vector<float> ranges(num_lidar_samples,0.0);
+    laserScan.ranges = ranges;
+
+    // int max_angle = (int)turtlelib::rad2deg(laserScan.angle_max);
+    // int min_angle = (int)turtlelib::rad2deg(laserScan.angle_min);
+
+    // Loop across angles
+    for (int i=0; i>num_lidar_samples; i++){
+        ROS_ERROR_STREAM(i);
+        turtlelib::Q current_config = drive.getConfig();
+        turtlelib::Vector2D current_vec = {current_config.x, current_config.y};
+        double current_theta = current_config.theta;
+        turtlelib::Transform2D Twr(current_vec,current_theta); // The robot in the world frame
+        turtlelib::Transform2D Trw = Twr.inv(); // The world in the robot frame
+
+        // turtlelib::Vector2D robot_to_world = Trw.translation(); // the robot to the world vector
+
+        // Loop across obstacles
+        int l = radii.size();
+        for (int j=0; j<l; j++){
+
+            turtlelib::Vector2D markervec = {x_locs[i], y_locs[i]};
+            turtlelib::Transform2D Twm(markervec); // The marker in the world frame
+            turtlelib::Transform2D Trm(0);
+            Trm = Trw * Twm; //The marker in the robot frame
+            
+            turtlelib::Transform2D Tmr(0); // The robot in the marker frame
+            Tmr = Trm.inv();
+            // turtlelib::Vector2D marker_to_robot = Tmr.translation(); //The vector of the marker to the robot
+
+            double robot_x_in_marker = Tmr.translation().x;
+            double robot_y_in_marker = Tmr.translation().y;
+
+            int angle = i;
+            double u_x, u_y;
+            // Unit vector components for the direction
+            u_x = std::cos(turtlelib::deg2rad(angle));
+            u_y = std::sin(turtlelib::deg2rad(angle));
+
+            double dx, dy, dr, D, x1, x2, y1, y2, delta;
+            
+            x1 = robot_x_in_marker;
+            y1 = robot_y_in_marker;
+            x2 = robot_x_in_marker + u_x;
+            y2 = robot_y_in_marker + u_y;
+            
+            dx = x2-x1;
+            dy = y2-y1;
+            dr = std::sqrt(dx*dx + dy*dy);
+            D = (x1*y2) - (x2*y1);
+
+            delta = (radii[i]*radii[i]*dr*dr) - (D*D);
+            ROS_ERROR_STREAM(delta);
+
+            if (delta > 0){ // This means there is an intersection with the marker at this angle
+                // Find where it intersects (both points), and keep the minimum one of the two
+                ROS_ERROR_STREAM("found an intersection");
+                double xint1,yint1, xint2, yint2, mag1, mag2;
+
+                xint1 = ((D * dy) + ((dy / std::abs(dy)) * dx*std::sqrt(delta))  )/(dr*dr);
+                yint1 = ((-1 * D * dx) + (std::abs(dy) * std::sqrt(delta))  )/(dr*dr);
+
+                xint2 = ((D * dy) - ((dy / std::abs(dy)) * dx*std::sqrt(delta))  )/(dr*dr);
+                yint2 = ((-1 * D * dx) - (std::abs(dy) * std::sqrt(delta))  )/(dr*dr);
+
+                mag1 = std::sqrt(xint1*xint1 + yint1*yint1);
+                mag2 = std::sqrt(xint2*xint2 + yint2*yint2);
+
+                // If there's already a nonzero entry here, find the minimum of all 3
+
+                if (laserScan.ranges[i] > 0.0){
+                    float minmag = std::min(mag1, mag2);
+                    laserScan.ranges[i] = std::min(minmag, laserScan.ranges[i]);
+                }
+                // If there's no entry already, find the minimum of the 2 possible intersections
+                // Always find the minimum here. Later, we should set it to 0 if it's outside of the acceptable range.
+                else{
+                    laserScan.ranges[i] = std::min(mag1, mag2);
+                }
+                
+            }
+            else{ // Delta is negative, so there's no intersection
+                laserScan.ranges[i] = 0.0;
+            }
+            // Remove values that are outside of acceptable ranges for the lidar
+            if (laserScan.ranges[i] > laserScan.range_max || laserScan.ranges[i] < laserScan.range_min){
+                laserScan.ranges[i] = 0;
+                ROS_ERROR_STREAM("out of range somehow");
+            }
+        }
+    }
 
 }
 
@@ -345,6 +484,15 @@ int main(int argc, char * argv[])
     nh.param("theta0", theta_0, 1.57);
     nh.param("x_length", x_length, 10.0);
     nh.param("y_length", y_length, 10.0);
+    n.param("min_lidar_range", min_lidar_range,0.120);
+    n.param("max_lidar_range", max_lidar_range,3.5);
+    n.param("num_lidar_samples", num_lidar_samples,360);
+    n.param("min_lidar_angle", min_lidar_angle,0.0);
+    n.param("max_lidar_angle", max_lidar_angle,6.28319);
+    n.param("lidar_angle_resolution", lidar_angle_resolution,1.0);
+    n.param("lidar_range_resolution", lidar_range_resolution, 0.015);
+    n.param("lidar_noise_mean", lidar_noise_mean, 0.0);
+    n.param("lidar_noise_stddev", lidar_noise_stddev, 0.01);
 
     nh.getParam("radii", radii);
     nh.getParam("x_pos", x_locs);
@@ -365,6 +513,8 @@ int main(int argc, char * argv[])
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
     ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
     ros::Publisher fake_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("fake_sensor",10);
+    ros::Publisher laser_scan_pub = n.advertise<sensor_msgs::LaserScan>("laser_data",10);
+
     ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
@@ -429,6 +579,8 @@ int main(int argc, char * argv[])
 
         turtle_config = drive.forward_kinematics(wheel_angles);
 
+        // Loop through all 4 markers and determine the difference between them
+
         // wheel_angles_old.L = wheel_angles.L + wheel_speeds.Ldot*rand_slip;
         // wheel_angles_old.R = wheel_angles.R + wheel_speeds.Rdot*rand_slip;
         wheel_angles_old.L = wheel_angles.L;
@@ -436,9 +588,12 @@ int main(int argc, char * argv[])
 
         // Use forward kinematics from DiffDrive to update the position of the robot
         if (ts.data % 100 == 0){
-            ROS_ERROR_STREAM(ts.data);
+            // ROS_ERROR_STREAM(ts.data);
             sim_obstacles = simulateObstacles(radii, x_locs, y_locs);
             fake_sensor_pub.publish(sim_obstacles);
+            simulateLidar();
+            laser_scan_pub.publish(laserScan);
+            // Publish LIDAR data
         }
 
 

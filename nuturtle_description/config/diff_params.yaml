@@ -8,5 +8,14 @@ encoder_ticks_to_rad: 0.00153398
 motor_cmd_max: [-256, 256]
 slip_min: -0.02
 slip_max: 0.02
-basic_sensor_variance: 0
+basic_sensor_variance: 0.02
 max_range: 10
+min_lidar_range: 0.120
+max_lidar_range: 3.5
+num_lidar_samples: 360
+min_lidar_angle: 0.0
+max_lidar_angle: 6.28319
+lidar_angle_resolution: 1
+lidar_range_resolution: 0.015
+lidar_noise_mean: 0
+lidar_noise_stddev: 0.01
