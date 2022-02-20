@@ -1,11 +1,11 @@
 ---
 
 radii: [0.038, 0.038, 0.038]
-x_pos: [1, 1, -1]
-y_pos: [1, -1, -1]
+x_pos: [-0.6, 0.6, 0.6]
+y_pos: [-0.8, -0.8, 0.8]
 x0: 0.0
 y0: 0.0
 theta0: 0.0
 frequency: 500
-x_length: 10
-y_length: 10
+x_length: 5
+y_length: 5

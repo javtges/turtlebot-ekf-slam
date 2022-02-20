@@ -380,14 +380,13 @@ void simulateLidar(){
         double current_theta = current_config.theta;
         // ROS_WARN("%f",current_theta);
         turtlelib::Transform2D Twb(current_vec,current_theta); // The robot in the world frame
-        // turtlelib::Transform2D Tbw = Twb.inv(); // The world in the robot frame
+        turtlelib::Transform2D Tbw = Twb.inv(); // The world in the robot frame
         // laserScan.ranges[i] = 3;
 
         // turtlelib::Vector2D robot_to_world = Trw.translation(); // the robot to the world vector
 
         // Loop across obstacles
         int l = radii.size();
-        int closest = 0;
         for (int j=0; j<l; j++){
 
             turtlelib::Vector2D markervec = {x_locs[j], y_locs[j]};
@@ -397,9 +396,6 @@ void simulateLidar(){
             
             Tob = Tow * Twb;
             Tbo = Tob.inv();
-
-            double robot_x_in_marker = Tob.translation().x;
-            double robot_y_in_marker = Tob.translation().y;
 
             int angle = i;
             double u_x=0, u_y=0;
@@ -439,11 +435,6 @@ void simulateLidar(){
             D = (x1*y2) - (x2*y1);
 
             delta = (radii[j]*radii[j]*dr*dr) - (D*D);
-            // ROS_ERROR_STREAM(dr);
-            // ROS_ERROR_STREAM(radii[j]);
-            // ROS_ERROR_STREAM(D);
-            // ROS_ERROR_STREAM(j);
-            // ROS_ERROR_STREAM(delta);
 
             if (delta >= 0){ // This means there is an intersection with the marker at this angle
                 // Find where it intersects (both points), and keep the minimum one of the two
@@ -478,7 +469,7 @@ void simulateLidar(){
 
                 // Sets a flag to remove infinite line intersections
                 if (findDistance(x2,y2,intersection.x,intersection.y) > magnitude){
-                    ROS_WARN("marker %d distance %f at %d, REFLECTION",j, magnitude,i);
+                    // ROS_WARN("marker %d distance %f at %d, REFLECTION",j, magnitude,i);
                     reflection = 1;
                 }
 
@@ -495,7 +486,7 @@ void simulateLidar(){
                 if (reflection == 0){
                     distance -= std::fmod(distance,lidar_range_resolution);
                     laserScan.ranges[i] = distance;
-                    ROS_WARN("marker %d distance %f at %d, ADDED POINT",j, laserScan.ranges[i],i);
+                    // ROS_WARN("marker %d distance %f at %d, ADDED POINT",j, laserScan.ranges[i],i);
                 }
                 
             }
@@ -503,6 +494,115 @@ void simulateLidar(){
             else{ // Delta is negative, so there's no intersection
             }
             // Remove values that are outside of acceptable ranges for the lidar
+        }
+        
+        // If there's no populated laserScan input after looking at the markers
+        if (laserScan.ranges[i] == 0.0){
+            // Check for walls
+            double u_x=0.0, u_y=0.0;
+            float output = 0.0;
+            int angle = i;
+            // Unit vector components for the direction
+            u_x = std::cos(turtlelib::deg2rad(angle) + current_theta) * laserScan.range_min;
+            u_y = std::sin(turtlelib::deg2rad(angle) + current_theta) * laserScan.range_min;
+            
+            double x1=0, x2=0, y1=0, y2=0, x3=0, y3=0, x4=0, y4=0 ;
+            std::vector<turtlelib::Vector2D> edges{{-x_length/2, -y_length/2}, {x_length/2, -y_length/2}, {x_length/2, y_length/2}, {-x_length/2, y_length/2}};
+            std::vector<turtlelib::Vector2D> intersections{{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
+            std::vector<float> distances(3);
+            x1 = current_config.x;
+            y1 = current_config.y;
+            
+            // There's going to be a problem here with rotations
+            x2 = current_config.x + u_x;
+            y2 = current_config.y + u_y;
+
+            float den = 0.0;
+            float Px=0.0, Py=0.0;
+            // Find the points for line-line intersection. https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+            for(int k=0; k<=3; k++){
+                x3 = edges[k].x;
+                y3 = edges[k].y;
+                if (k==3){
+                    x4 = edges[0].x;
+                    y4 = edges[0].y;
+                }
+                else{
+                    x4 = edges[k+1].x;
+                    y4 = edges[k+1].y;
+                }
+
+                den = ((x1-x2)*(y3-y4)) - ((y1-y2)*(x3-x4));
+                // Good above here
+
+                ROS_ERROR_STREAM("angle " << i << " denominator " << den);
+                ROS_ERROR_STREAM("x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << " x3: " << x3 << " y3: " << y3 << " x4: " << x4 << " y4: " << y4);
+                
+                // Nonzero denominator means that there's an intersection
+                // Vertical walls - works
+                //if (den != 0.0 && (k%2) == 1){
+                if (x3 == x4){
+                    Px = (((x1*y2) - (y1*x2))*(x3-x4) - (x1-x2)*((x3*y4) - (y3*x4))) / den ;
+                    Py = (((x1*y2) - (y1*x2))*(y3-y4) - (y1-y2)*((x3*y4) - (y3*x4))) / den ;
+                    intersections[k].x = Px;
+                    intersections[k].y = Py;
+                    // Px = ((x1*y2 - y1*x2)*(x4-x3) - (x1-x2)*(x4*x3 - y3*x3)) / den ;
+                    // Py = ((x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x4*x3 - y3*x3)) / den ;
+
+                    ROS_ERROR_STREAM("Horizontal Wall Px: " << Px << " Py: " << Py);
+                    // if (std::abs(Px) < 5 && std::abs(Py) < 5){
+                        // ROS_ERROR_STREAM("Px: " << Px << " Py: " << Py);
+                    // }
+                }
+                //}
+                // Horizontal walls - currently don't work
+                //else if (den != 0.0 && (k%2) == 0){
+                if (y3 == y4){
+                    //  Px = ((x1*y2 - y1*x2)*(x4-x3) - (x1-x2)*(x4*x3 - y3*x3)) / den ;
+                    //  Py = ((x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x4*x3 - y3*x3)) / den ;
+                    Px = (((x1*y2) - (y1*x2))*(x3-x4) - (x1-x2)*((x3*y4) - (y3*x4))) / den ;
+                    Py = (((x1*y2) - (y1*x2))*(y3-y4) - (y1-y2)*((x3*y4) - (y3*x4))) / den ;
+                    intersections[k].x = Px;
+                    intersections[k].y = Py;
+                    ROS_ERROR_STREAM("Vertical Wall Px: " << Px << " Py: " << Py);
+                }
+                //}
+                // If no intersection, set the "intersection" equal to something beyond the limits anyways
+                // else{
+                //     Px = 0;//x_length + 1;
+                //     Py = 0;//y_length + 1;
+                // }
+                //intersections[k].x = Px;
+                //intersections[k].y = Py;
+                // ROS_ERROR_STREAM("Vertical Wall Px: " << Px << " Py: " << Py);
+            }
+
+            for(int ints=0; ints<=3; ints++){
+                // If the absolute values of the intersection points are both within the range of the arena
+                if( std::abs(intersections[ints].x) <= x_length/2 && std::abs(intersections[ints].y) <= y_length/2 ){
+                    // Find distance from turtlebot to wall, Check for reflections
+                    float robot_to_wall = 0, x2_to_wall = 0;
+                    robot_to_wall = findDistance(x1, y1, intersections[ints].x, intersections[ints].y);
+                    x2_to_wall = findDistance(x2, y2, intersections[ints].x, intersections[ints].y);
+                    ROS_WARN("found an intersection with angle %d, at points %f x and %f y, distance %f", i, intersections[ints].x, intersections[ints].y, robot_to_wall);
+                    
+                    // Check for reflections
+                    if (robot_to_wall > x2_to_wall){ // If this is NOT a reflection
+                       ROS_WARN("%f is greater than %f, not a reflection", robot_to_wall, x2_to_wall);
+                       //distances.push_back(robot_to_wall);
+                       output = robot_to_wall;
+                    }
+                    // If no reflection, set the laserdata to be equal to the minimum of the two distances
+                    // distances.push_back();
+                }
+                else{
+
+                }
+            }
+            // float output = *std::min_element(distances.begin(), distances.end());
+            ROS_WARN("%f", output);
+            laserScan.ranges[i] = output;
+
         }
     }
 }

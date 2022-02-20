@@ -209,10 +209,10 @@ Visualization Manager:
                   {}
                 blue-wheel_right_link:
                   {}
-                imu_link:
-                  {}
           red-base_footprint:
             red-base_link:
+              imu_link:
+                {}
               red-base_scan:
                 {}
               red-caster_back_link:
@@ -224,13 +224,13 @@ Visualization Manager:
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /nusim/walls
       Name: MarkerArray
       Namespaces:
-        walls: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /nusim/obstacles
@@ -338,7 +338,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.037457227706909
+      Distance: 9.37848949432373
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -354,9 +354,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7503980398178101
+      Pitch: 1.4203977584838867
       Target Frame: <Fixed Frame>
-      Yaw: 4.690392017364502
+      Yaw: 4.700389862060547
     Saved: ~
 Window Geometry:
   Displays:
