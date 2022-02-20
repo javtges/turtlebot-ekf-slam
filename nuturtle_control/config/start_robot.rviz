@@ -209,10 +209,10 @@ Visualization Manager:
                   {}
                 blue-wheel_right_link:
                   {}
+                imu_link:
+                  {}
           red-base_footprint:
             red-base_link:
-              imu_link:
-                {}
               red-base_scan:
                 {}
               red-caster_back_link:
@@ -338,7 +338,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.664935827255249
+      Distance: 3.037457227706909
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -354,9 +354,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6403975486755371
+      Pitch: 0.7503980398178101
       Target Frame: <Fixed Frame>
-      Yaw: 3.565396308898926
+      Yaw: 4.690392017364502
     Saved: ~
 Window Geometry:
   Displays:
@@ -375,4 +375,4 @@ Window Geometry:
     collapsed: true
   Width: 1200
   X: 368
-  Y: 27
+  Y: 0

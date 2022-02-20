@@ -360,6 +360,8 @@ void simulateLidar(){
     laserScan.range_min = 0.120; // min_lidar_range;
     laserScan.range_max = 3.5; // max_lidar_range;
     std::vector<float> ranges(num_lidar_samples,0.0);
+    // ROS_ERROR_STREAM("made a new thing");
+    
     laserScan.ranges = ranges;
 
     // int max_angle = (int)turtlelib::rad2deg(laserScan.angle_max);
@@ -376,6 +378,7 @@ void simulateLidar(){
         turtlelib::Q current_config = drive.getConfig();
         turtlelib::Vector2D current_vec = {current_config.x, current_config.y};
         double current_theta = current_config.theta;
+        // ROS_WARN("%f",current_theta);
         turtlelib::Transform2D Twb(current_vec,current_theta); // The robot in the world frame
         // turtlelib::Transform2D Tbw = Twb.inv(); // The world in the robot frame
         // laserScan.ranges[i] = 3;
@@ -399,21 +402,34 @@ void simulateLidar(){
             double robot_y_in_marker = Tob.translation().y;
 
             int angle = i;
-            double u_x, u_y;
+            double u_x=0, u_y=0;
 
             // Unit vector components for the direction
             u_x = std::cos(turtlelib::deg2rad(angle)) * laserScan.range_min;
             u_y = std::sin(turtlelib::deg2rad(angle)) * laserScan.range_min;
             // ROS_ERROR_STREAM(angle << " " << u_x << " " << u_y);
 
-            double dx, dy, dr, D, x1, x2, y1, y2, delta;
+            double dx=0, dy=0, dr=0, D=0, x1=0, x2=0, y1=0, y2=0, delta=0;
+            float distance = 0;
+            int reflection = 0;
             
-            x1 = robot_x_in_marker;
-            y1 = robot_y_in_marker;
-            // ROS_ERROR_STREAM("robot x in marker: " << x1 << " robot y in marker: " << y1);
+            turtlelib::Vector2D vec1, vec2;
+            vec1.x = 0;
+            vec1.y = 0;
+            vec1 = Tob(vec1);
 
-            x2 = robot_x_in_marker + u_x;
-            y2 = robot_y_in_marker + u_y;
+            vec2.x = u_x;
+            vec2.y = u_y;
+            vec2 = Tob(vec2);
+
+            x1 = vec1.x;
+            y1 = vec1.y;
+
+            x2 = vec2.x;
+            y2 = vec2.y;
+
+            // ROS_ERROR_STREAM("robot x in marker: " << x1 << " robot y in marker: " << y1);
+            // ROS_ERROR_STREAM("OTHER X: " << vec1.x << " OTHER Y: " << vec1.y);
             
             dx = x2-x1;
             dy = y2-y1;
@@ -432,7 +448,7 @@ void simulateLidar(){
             if (delta >= 0){ // This means there is an intersection with the marker at this angle
                 // Find where it intersects (both points), and keep the minimum one of the two
                 // ROS_ERROR_STREAM("found an intersection at " << angle << " and marker " << j);
-                double xint1,yint1, xint2, yint2, mag1, mag2;
+                double xint1=0, yint1=0, xint2=0, yint2=0, mag1=0, mag2=0;
                 // laserScan.ranges[i] = 0.5;
 
                 xint1 = ((D * dy) + (sign(dy) * dx*std::sqrt(delta))  )/(dr*dr);
@@ -445,56 +461,50 @@ void simulateLidar(){
                 mag1 = findDistance(x1,y1,xint1,yint1);
                 mag2 = findDistance(x1,y1,xint2,yint2);
 
-                // ROS_ERROR_STREAM("mag1: "<< mag1 << " mag2: " << mag2);                
-                float minmag = std::min(mag1, mag2);
-
+                turtlelib::Vector2D int1, int2, intersection;
+                double magnitude;
+                int1.x = xint1; int1.y = yint1;
+                int2.x = xint2; int2.y = yint2;
+                
+                // Find the minimum of the two magnitudes, record it and the corresponding intersection points with the circle.
                 if (mag1 < mag2){
-                    closest = 1;
+                    intersection = int1;
+                    magnitude = mag1;
                 }
                 else{
-                    closest = 2;
+                    intersection = int2;
+                    magnitude = mag2;
                 }
 
-                // If there's already a nonzero entry here, find the minimum of all 3
+                // Sets a flag to remove infinite line intersections
+                if (findDistance(x2,y2,intersection.x,intersection.y) > magnitude){
+                    ROS_WARN("marker %d distance %f at %d, REFLECTION",j, magnitude,i);
+                    reflection = 1;
+                }
 
+                // Compare with other markers that may be colinear
                 if (laserScan.ranges[i] > 0.0){
-                    laserScan.ranges[i] = std::min(minmag, laserScan.ranges[i]);
+                    distance = std::min(laserScan.ranges[i], (float)magnitude);
                 }
-                // If there's no entry already, find the minimum of the 2 possible intersections
-                // Always find the minimum here. Later, we should set it to 0 if it's outside of the acceptable range.
+                // If there are no colinear markers
                 else{
-                    laserScan.ranges[i] = minmag;
+                    distance = (float)magnitude;
                 }
-                // REMOVE REFLECTIONS
-                if (closest == 1){
-                    if (laserScan.ranges[i] < findDistance(x2,y2,xint1,yint1)){
-                        laserScan.ranges[i] = 0;
-                    }
+
+                // Only set the point if it's not a reflection
+                if (reflection == 0){
+                    distance -= std::fmod(distance,lidar_range_resolution);
+                    laserScan.ranges[i] = distance;
+                    ROS_WARN("marker %d distance %f at %d, ADDED POINT",j, laserScan.ranges[i],i);
                 }
-                else{
-                    if (laserScan.ranges[i] < findDistance(x2,y2,xint2,yint2)){
-                        laserScan.ranges[i] = 0;
-                    }
-                }
+                
             }
             
             else{ // Delta is negative, so there's no intersection
-                laserScan.ranges[i] = 0.0;
             }
             // Remove values that are outside of acceptable ranges for the lidar
-            if (laserScan.ranges[i] != 0.0){ // if it's nonzero
-                if (laserScan.ranges[i] > laserScan.range_max || laserScan.ranges[i] < laserScan.range_min){
-                    laserScan.ranges[i] = 0.0;
-                    // ROS_ERROR_STREAM("out of range somehow");
-                }
-            }
         }
-
-        ROS_WARN("distance %f at %d",laserScan.ranges[i],i);
     }
-
-
-
 }
 
 
