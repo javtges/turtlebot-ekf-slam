@@ -56,7 +56,7 @@ static sensor_msgs::JointState jointState;
 static geometry_msgs::TransformStamped transformStamped;
 static visualization_msgs::MarkerArray ma, walls, sim_obstacles;
 static nuturtlebot_msgs::SensorData sensor_data;
-static double x_length, y_length, slip_min, slip_max, rand_slip, basic_sensor_variance, max_range;
+static double x_length, y_length, slip_min, slip_max, rand_slip, basic_sensor_variance, max_range, collision_radius;
 static double x_0, y_0, theta_0;
 static double left_velocity, right_velocity;
 static double motor_cmd_to_radsec, encoder_ticks_to_rad;
@@ -64,9 +64,10 @@ static double min_lidar_range, max_lidar_range, min_lidar_angle, max_lidar_angle
 static int num_lidar_samples;
 static turtlelib::DiffDrive drive;
 static std::vector<double> radii, x_locs, y_locs, motor_cmd_max;
+static std::vector<turtlelib::Vector2D> obstacles;
 static turtlelib::Phi wheel_angles, wheel_angles_old;
 static turtlelib::Phidot wheel_speeds;
-static turtlelib::Q turtle_config;
+static turtlelib::Q turtle_config, previous_config;
 static sensor_msgs::LaserScan laserScan;
 
 /// \brief The callback function for the reset service. Resets the timestamp counter and teleports the turtlebot back to its starting pose.
@@ -329,6 +330,7 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
         maTemp.markers[i].color.b = 0.0;
         maTemp.markers[i].color.a = 1.0;
         maTemp.markers[i].lifetime = ros::Duration(0);
+
     }
     return maTemp;
 
@@ -535,8 +537,8 @@ void simulateLidar(){
                 den = ((x1-x2)*(y3-y4)) - ((y1-y2)*(x3-x4));
                 // Good above here
 
-                ROS_ERROR_STREAM("angle " << i << " denominator " << den);
-                ROS_ERROR_STREAM("x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << " x3: " << x3 << " y3: " << y3 << " x4: " << x4 << " y4: " << y4);
+                // ROS_ERROR_STREAM("angle " << i << " denominator " << den);
+                // ROS_ERROR_STREAM("x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << " x3: " << x3 << " y3: " << y3 << " x4: " << x4 << " y4: " << y4);
                 
                 // Nonzero denominator means that there's an intersection
                 // Vertical walls - works
@@ -549,7 +551,7 @@ void simulateLidar(){
                     // Px = ((x1*y2 - y1*x2)*(x4-x3) - (x1-x2)*(x4*x3 - y3*x3)) / den ;
                     // Py = ((x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x4*x3 - y3*x3)) / den ;
 
-                    ROS_ERROR_STREAM("Horizontal Wall Px: " << Px << " Py: " << Py);
+                    // ROS_ERROR_STREAM("Horizontal Wall Px: " << Px << " Py: " << Py);
                     // if (std::abs(Px) < 5 && std::abs(Py) < 5){
                         // ROS_ERROR_STREAM("Px: " << Px << " Py: " << Py);
                     // }
@@ -564,17 +566,10 @@ void simulateLidar(){
                     Py = (((x1*y2) - (y1*x2))*(y3-y4) - (y1-y2)*((x3*y4) - (y3*x4))) / den ;
                     intersections[k].x = Px;
                     intersections[k].y = Py;
-                    ROS_ERROR_STREAM("Vertical Wall Px: " << Px << " Py: " << Py);
+                    // ROS_ERROR_STREAM("Vertical Wall Px: " << Px << " Py: " << Py);
                 }
                 //}
                 // If no intersection, set the "intersection" equal to something beyond the limits anyways
-                // else{
-                //     Px = 0;//x_length + 1;
-                //     Py = 0;//y_length + 1;
-                // }
-                //intersections[k].x = Px;
-                //intersections[k].y = Py;
-                // ROS_ERROR_STREAM("Vertical Wall Px: " << Px << " Py: " << Py);
             }
 
             for(int ints=0; ints<=3; ints++){
@@ -584,16 +579,15 @@ void simulateLidar(){
                     float robot_to_wall = 0, x2_to_wall = 0;
                     robot_to_wall = findDistance(x1, y1, intersections[ints].x, intersections[ints].y);
                     x2_to_wall = findDistance(x2, y2, intersections[ints].x, intersections[ints].y);
-                    ROS_WARN("found an intersection with angle %d, at points %f x and %f y, distance %f", i, intersections[ints].x, intersections[ints].y, robot_to_wall);
+                    // ROS_WARN("found an intersection with angle %d, at points %f x and %f y, distance %f", i, intersections[ints].x, intersections[ints].y, robot_to_wall);
                     
                     // Check for reflections
                     if (robot_to_wall > x2_to_wall){ // If this is NOT a reflection
-                       ROS_WARN("%f is greater than %f, not a reflection", robot_to_wall, x2_to_wall);
+                    //    ROS_WARN("%f is greater than %f, not a reflection", robot_to_wall, x2_to_wall);
                        //distances.push_back(robot_to_wall);
                        output = robot_to_wall;
                     }
                     // If no reflection, set the laserdata to be equal to the minimum of the two distances
-                    // distances.push_back();
                 }
                 else{
 
@@ -606,7 +600,6 @@ void simulateLidar(){
         }
     }
 }
-
 
 /// The main function and loop.
 int main(int argc, char * argv[])
@@ -633,6 +626,7 @@ int main(int argc, char * argv[])
     n.param("lidar_range_resolution", lidar_range_resolution, 0.015);
     n.param("lidar_noise_mean", lidar_noise_mean, 0.0);
     n.param("lidar_noise_stddev", lidar_noise_stddev, 0.01);
+    n.param("collision_radius", collision_radius, 0.11);
 
     nh.getParam("radii", radii);
     nh.getParam("x_pos", x_locs);
@@ -717,9 +711,23 @@ int main(int argc, char * argv[])
         wheel_angles.L = (wheel_speeds.Ldot/frequency) + wheel_angles_old.L;
         wheel_angles.R = (wheel_speeds.Rdot/frequency) + wheel_angles_old.R;
 
+        // Save previous coordinates
+        // Update coords
+        // Check to see if you're near an obstacle
+        // If you collided, set the pose such that the circles are tangent
+        previous_config = drive.getConfig();
         turtle_config = drive.forward_kinematics(wheel_angles);
 
-        // Loop through all 4 markers and determine the difference between them
+        for (int m=0; m<ma.markers.size(); m++){
+
+            // ROS_WARN_STREAM("turtle at :" << turtle_config.x << " " << turtle_config.y << "\r\n");
+            // ROS_WARN_STREAM("marker at :" << ma.markers[m].pose.position.x << " " << ma.markers[m].pose.position.y << "\r\n");
+            // ROS_WARN_STREAM(findDistance(0, 0, ma.markers[m].pose.position.x, ma.markers[m].pose.position.y) << "\r\n");
+            
+            if (findDistance(0, 0, ma.markers[m].pose.position.x, ma.markers[m].pose.position.y) < (collision_radius + (ma.markers[m].scale.x/2))){
+                drive.setConfig(previous_config);
+            }
+        }
 
         // wheel_angles_old.L = wheel_angles.L + wheel_speeds.Ldot*rand_slip;
         // wheel_angles_old.R = wheel_angles.R + wheel_speeds.Rdot*rand_slip;
@@ -729,8 +737,8 @@ int main(int argc, char * argv[])
         // Use forward kinematics from DiffDrive to update the position of the robot
         if (ts.data % 100 == 0){
             // ROS_ERROR_STREAM(ts.data);
-            sim_obstacles = simulateObstacles(radii, x_locs, y_locs);
-            fake_sensor_pub.publish(sim_obstacles);
+            ma = simulateObstacles(radii, x_locs, y_locs);
+            fake_sensor_pub.publish(ma);
             simulateLidar();
             laser_scan_pub.publish(laserScan);
             // Publish LIDAR data
