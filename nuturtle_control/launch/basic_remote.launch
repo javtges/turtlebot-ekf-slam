@@ -11,6 +11,6 @@
     <node name="hlds_laser_publisher" type="hlds_laser_publisher" pkg="hls_lfcd_lds_driver" machine="turtlebot">
         <param name="port" value="/dev/ttyACM0"/>
         <param name="frame_id" value="blue-base_scan"/>
-    <node/>
+    </node>
 
 </launch>
