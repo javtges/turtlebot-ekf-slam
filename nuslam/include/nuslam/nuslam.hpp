@@ -15,32 +15,37 @@ namespace nuslam
     // Structs?
 
 
-    class ExtendedKalmanFilter
+    class EKFilter
     {
 
     public:
 
-    ExtendedKalmanFilter(turtlelib::Q robot_state, int n);
+    EKFilter(turtlelib::Q robot_state, int n);
 
     void ComputeKalmanGains(); //Makes K
 
-    void UpdatePosState(); // Makes Xi
+    void UpdatePosState(double x, double y); // Makes Xi
 
     void UpdateCovariance(); // Makes Sigma
 
     void UpdateMeasurement(int j); // Makes H
 
-    // Make theoretical measurement
+    void Predict(turtlelib::Twist2D twist, double time);
 
+    void init_landmarks(int n, int marker_id, double x, double y);
+
+    void init_Q(double val);
 
     private:
-        arma::mat Q_bar; // Process noise
+        arma::mat Q; // Process noise
         arma::mat H; // 
         arma::mat Sigma; // covariance matrix
         arma::mat K; // Kalman gain
         arma::colvec Xi; // Current state
         arma::colvec q; // Turtlebot pose 3x1
         arma::colvec m; // Marker locations 2nx1
+        arma::colvec z_hat;
+        int n; //num rows
     };
 
 }
