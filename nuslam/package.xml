@@ -50,6 +50,8 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>nuturtlebot_msgs</build_depend>
   <build_depend>turtlelib</build_depend>
   <exec_depend>turtlelib</exec_depend>
   <build_depend>armadillo</build_depend>

@@ -75,7 +75,7 @@ namespace nuslam{
     }
 
     void EKFilter::UpdatePosState(double x, double y){
-        // Make Xi
+        // Make Xi using X and Y of the fake sensor data in the map frame
         arma::colvec z(2);
         z(0) = std::sqrt( std::pow(x,2) + std::pow(y,2) );
         z(1) = std::atan2( y, x );
