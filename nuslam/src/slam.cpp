@@ -20,6 +20,8 @@
 #include <nuturtlebot_msgs/SensorData.h>
 #include <nuturtlebot_msgs/WheelCommands.h>
 #include "nuturtle_control/SetPose.h"
+#include "nuslam/nuslam.hpp"
+#include <armadillo>
 
 /// \file
 /// \brief Handles the odometry to allow the blue turtlebot to move in simulation and real life.
@@ -51,7 +53,8 @@ static turtlelib::Twist2D twist;
 static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
-static std::vector<double> positions, velocities;
+static std::vector<double> positions, velocities, radii, x_locs, y_locs;
+static nuslam::EKFilter kalman;
 
 
 /// \brief The callback function for the joint_state subscriber
@@ -83,15 +86,40 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
     drive.forward_kinematics(nextAngles);
 
-    // odom.twist.twist.linear.x = twist.xdot;
-    // odom.twist.twist.linear.y = twist.ydot;
-    // odom.twist.twist.linear.z = 0;
-    // odom.twist.twist.angular.x = 0;
-    // odom.twist.twist.angular.y = 0;
-    // odom.twist.twist.angular.z = twist.thetadot;
+    odom.twist.twist.linear.x = twist.xdot;
+    odom.twist.twist.linear.y = twist.ydot;
+    odom.twist.twist.linear.z = 0;
+    odom.twist.twist.angular.x = 0;
+    odom.twist.twist.angular.y = 0;
+    odom.twist.twist.angular.z = twist.thetadot;
 
 }
 
+void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
+
+        // IN SUBSCRIBER CALLBACK FOR FAKE_SENSOR:
+        // LOOP THROUGH THE LANDMARKS
+        // IF NOT INIT YET
+            // kalman.init_landmarks(marker_id, double x, double y) <- make sure to do this all in the map frame
+            // kalman.init_Q;
+        // THE ORDER OF THE SLAM
+            // kalman.predict(twist,time);
+            // kalman.UpdateMeasurement(marker j) <- use the current Xi and robot position to find Z_hat
+            // kalman.ComputeKalmanGains()
+            // kalman.UpdatePosState(x_loc, y_loc) <- find Z from the fake_sensor measurement
+            // kalman.UpdateCovariance()
+            // Use Xi to determine green robot's location
+
+    int num_markers = msg.markers.size();
+    for (int i=0; i<num_markers; i++){
+        kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+    }
+
+    arma::colvec m_vec = kalman.get_m();
+    ROS_WARN("m matrix");
+    m_vec.print();
+    
+}
 
 /// \brief The callback for the set_pose service
 /// Sets the new configuration of the turtlebot to the service request data
@@ -120,11 +148,14 @@ int main(int argc, char * argv[])
     ros::NodeHandle n;
 
     /// Gets the required values from the parameter server. Default values are provided for frequency, x0, y0, and theta0.
-    n.param("/nusim/frequency",frequency, 500);
+    frequency = 5;
     n.param("/nusim/x0", x_0, 0.0);
     n.param("/nusim/y0", y_0, 0.0);
     n.param("/nusim/theta0", theta_0, 0.0);
     n.param("odom_id", odom_frame, std::string("odom"));
+    n.getParam("/nusim/radii", radii);
+    n.getParam("/nusim/x_pos", x_locs);
+    n.getParam("/nusim/y_pos", y_locs);
 
     ros::Rate r(frequency);
 
@@ -138,6 +169,8 @@ int main(int argc, char * argv[])
         ros::shutdown();
     }
     body_id = "green-base_footprint";
+
+    kalman.EKFilter_init(initial_config, 3);
 
     // if (!n.getParam("wheel_left",wheel_left)){
     //     ROS_ERROR_STREAM("Wheel Left frame not found!");
@@ -153,7 +186,9 @@ int main(int argc, char * argv[])
     
     
     ros::Subscriber joint_state_sub = n.subscribe("red/joint_states",10, joint_state_callback);
+    ros::Subscriber fake_sensor_sub = n.subscribe("/nusim/fake_sensor", 10, fake_sensor_callback);
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
+
     // ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);
@@ -161,11 +196,24 @@ int main(int argc, char * argv[])
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
 
+    // IN SUBSCRIBER CALLBACK FOR FAKE_SENSOR:
+        // LOOP THROUGH THE LANDMARKS
+        // IF NOT INIT YET
+            // kalman.init_landmarks(marker_id, double x, double y) <- make sure to do this all in the map frame
+            // kalman.init_Q;
+        // THE ORDER OF THE SLAM
+            // kalman.predict(twist,time);
+            // kalman.UpdateMeasurement(marker j) <- use the current Xi and robot position to find Z_hat
+            // kalman.ComputeKalmanGains()
+            // kalman.UpdatePosState(x_loc, y_loc) <- find Z from the fake_sensor measurement
+            // kalman.UpdateCovariance()
+            // Use Xi to determine green robot's location
+
     /// The main loop of the node. Per the rate, this runs at 500Hz.
     while(ros::ok())
     {
 
-        /// Get the current config of the turtlebot
+        // Get the current config of the turtlebot
         turtle_config = drive.getConfig();
 
         /// Make the transform from the odom frame to the body frame
@@ -182,24 +230,24 @@ int main(int argc, char * argv[])
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
 
-        br.sendTransform(transformStamped);
+        // br.sendTransform(transformStamped);
 
 
-        /// Make and publish the odometry message using the current blue turtle configuration
-        // odom.header.stamp = ros::Time::now();
-        // odom.header.frame_id = odom_frame;
-        // odom.child_frame_id = body_id;
-        // odom.pose.pose.position.x = turtle_config.x;
-        // odom.pose.pose.position.y = turtle_config.y;
-        // odom.pose.pose.position.z = 0;
-        // tf2::Quaternion quat;
-        // quat.setRPY(0,0,turtle_config.theta);
-        // odom.pose.pose.orientation.x = quat.x();
-        // odom.pose.pose.orientation.y = quat.y();
-        // odom.pose.pose.orientation.z = quat.z();
-        // odom.pose.pose.orientation.w = quat.w();
+        // Make and publish the odometry message using the current blue turtle configuration
+        odom.header.stamp = ros::Time::now();
+        odom.header.frame_id = odom_frame;
+        odom.child_frame_id = body_id;
+        odom.pose.pose.position.x = turtle_config.x;
+        odom.pose.pose.position.y = turtle_config.y;
+        odom.pose.pose.position.z = 0;
+        tf2::Quaternion quat;
+        quat.setRPY(0,0,turtle_config.theta);
+        odom.pose.pose.orientation.x = quat.x();
+        odom.pose.pose.orientation.y = quat.y();
+        odom.pose.pose.orientation.z = quat.z();
+        odom.pose.pose.orientation.w = quat.w();
 
-        // // ROS_WARN_STREAM("publishing odom??");
+        // ROS_WARN_STREAM("publishing odom??");
         // odom_pub.publish(odom);
 
         ros::spinOnce();

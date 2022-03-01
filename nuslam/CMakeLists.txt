@@ -162,6 +162,7 @@ target_link_libraries(${PROJECT_NAME}
 target_link_libraries(slam_node
   ${catkin_LIBRARIES}
   ${ARMADILLO_LIBRARIES}
+  nuslam
   turtlelib
 )
 

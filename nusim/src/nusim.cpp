@@ -304,7 +304,7 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
         maTemp.markers[i].header.frame_id = "red-base_footprint";
         maTemp.markers[i].header.stamp = ros::Time::now();
         maTemp.markers[i].ns = "nusim_node";
-        maTemp.markers[i].id = i+9;
+        maTemp.markers[i].id = i;
         maTemp.markers[i].type = visualization_msgs::Marker::CYLINDER;
         if (mag > max_range){
             maTemp.markers[i].action = visualization_msgs::Marker::DELETE;
@@ -594,7 +594,7 @@ void simulateLidar(){
                 }
             }
             // float output = *std::min_element(distances.begin(), distances.end());
-            ROS_WARN("%f", output);
+            // ROS_WARN("%f", output);
             laserScan.ranges[i] = output;
 
         }

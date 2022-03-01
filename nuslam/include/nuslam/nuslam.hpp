@@ -20,7 +20,9 @@ namespace nuslam
 
     public:
 
-    EKFilter(turtlelib::Q robot_state, int n);
+    EKFilter();
+
+    void EKFilter_init(turtlelib::Q robot_state, int n);
 
     void ComputeKalmanGains(); //Makes K
 
@@ -32,20 +34,38 @@ namespace nuslam
 
     void Predict(turtlelib::Twist2D twist, double time);
 
-    void init_landmarks(int n, int marker_id, double x, double y);
+    void init_landmarks(int marker_id, double x, double y);
 
     void init_Q(double val);
 
+    arma::mat get_Q();
+
+    arma::mat get_H();
+
+    arma::mat get_Sigma();
+
+    arma::mat get_K();
+
+    arma::colvec get_Xi();
+
+    arma::colvec get_q();
+
+    arma::colvec get_m();
+
+    arma::colvec get_zhat();
+
+    int get_n();
+
     private:
-        arma::mat Q; // Process noise
-        arma::mat H; // 
-        arma::mat Sigma; // covariance matrix
-        arma::mat K; // Kalman gain
-        arma::colvec Xi; // Current state
-        arma::colvec q; // Turtlebot pose 3x1
-        arma::colvec m; // Marker locations 2nx1
-        arma::colvec z_hat;
-        int n; //num rows
+        arma::mat Q(2,2); // Process noise
+        arma::mat H(2,9); // 
+        arma::mat Sigma(9,9); // covariance matrix
+        arma::mat K(9,9); // Kalman gain
+        arma::colvec Xi(9); // Current state
+        arma::colvec q(3); // Turtlebot pose 3x1
+        arma::colvec m(6); // Marker locations 2nx1
+        arma::colvec z_hat(2);
+        int n = 3; //num rows
     };
 
 }
