@@ -6,41 +6,57 @@
 #include "turtlelib/diff_drive.hpp"
 #include "nuslam/nuslam.hpp"
 #include <armadillo>
+#include <ros/ros.h>
 
 
 namespace nuslam{
 
-    EKFilter::EKFilter(){
-        ;
-    }
+    EKFilter::EKFilter(int n) :
+            n(n),
+            Xi(arma::mat(9,1)),
+            K(arma::mat(3+2*n,3+2*n)),
+            H(arma::mat(2,3+2*n)),
+            Sigma(arma::mat(3+2*n,3+2*n)),
+            m(arma::mat(2*n,1)),
+            Q(arma::mat(2,2)),
+            q(arma::mat(3,1)),
+            z_hat(arma::mat(2,1))
+
+            {}
 
     void EKFilter::EKFilter_init(turtlelib::Q robot_state, int num){
         // Initialize Xi, m, and Sigma to zero
 
         // Make the Xi state vector
         // Xi.set_size(3);
-        Xi(0) = robot_state.theta;
-        Xi(1) = robot_state.x;
-        Xi(2) = robot_state.y;
-        m.set_size(2*n);
-        m.fill(0.0);
+        Xi(0,0) = robot_state.theta;
+        Xi(1,0) = robot_state.x;
+        Xi(2,0) = robot_state.y;
+        // m.set_size(2*n);
+        // m.fill(0.0);
 
         // Xi = join_cols(Xi, m);
         // Need to make the m part of the Xi
-        n = num;
-
 
         // Initialize Sigma to all Zeros
-        arma::mat Sigma_0q(3, 3, arma::fill::zeros);
-        arma::mat zero_3x2n(3, 6, arma::fill::zeros);
-        arma::mat zero_2nx3(6, 3, arma::fill::zeros);
-        arma::vec sigma_diag(n, 1000000);
-        arma::mat Sigma_0m = arma::diagmat(sigma_diag);
+        // arma::mat Sigma_0q(3, 3, arma::fill::zeros);
+        // arma::mat zero_3x2n(3, 2*n, arma::fill::zeros);
+        // arma::mat zero_2nx3(2*n, 3, arma::fill::zeros);
+        // arma::vec sigma_diag(n, 1000000);
+        // arma::mat Sigma_0m = arma::diagmat(sigma_diag);
 
-        arma::mat top = arma::join_rows(Sigma_0q, zero_3x2n);
-        arma::mat bot = arma::join_rows(zero_2nx3, Sigma_0m);
+        // arma::mat top = arma::join_rows(Sigma_0q, zero_3x2n);
+        // arma::mat bot = arma::join_rows(zero_2nx3, Sigma_0m);
 
-        Sigma = arma::join_cols(top, bot);
+        for(int i=0; i<n*2; i++){
+            Sigma(i+3,i+3) = 1000;
+        }
+
+        // Sigma(3,3) = 10000;
+        // Sigma(4,4) = 10000;
+        // Sigma(5,5) = 10000;
+
+        // Sigma = arma::join_cols(top, bot);
 
     }
 

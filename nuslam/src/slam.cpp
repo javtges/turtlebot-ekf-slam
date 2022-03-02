@@ -54,7 +54,7 @@ static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
 static std::vector<double> positions, velocities, radii, x_locs, y_locs;
-static nuslam::EKFilter kalman;
+static nuslam::EKFilter kalman(3);
 
 
 /// \brief The callback function for the joint_state subscriber
@@ -118,6 +118,10 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
     arma::colvec m_vec = kalman.get_m();
     ROS_WARN("m matrix");
     m_vec.print();
+
+    arma::mat sigma = kalman.get_Sigma();
+    ROS_WARN("sigma matrix");
+    sigma.print();
     
 }
 
@@ -170,8 +174,6 @@ int main(int argc, char * argv[])
     }
     body_id = "green-base_footprint";
 
-    kalman.EKFilter_init(initial_config, 3);
-
     // if (!n.getParam("wheel_left",wheel_left)){
     //     ROS_ERROR_STREAM("Wheel Left frame not found!");
     //     ros::shutdown();
@@ -192,6 +194,7 @@ int main(int argc, char * argv[])
     // ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);
+    kalman.EKFilter_init(initial_config, 3);
 
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
