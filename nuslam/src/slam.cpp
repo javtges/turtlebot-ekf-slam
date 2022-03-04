@@ -115,10 +115,12 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
 
     int num_markers = msg.markers.size();
     for (int i=0; i<num_markers; i++){
+        // PUT MARKER IN THE MAP FRAME!
+
         if (init_flag){
             kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         }
-        ROS_WARN_STREAM("twist" << twist);
+        // ROS_WARN_STREAM("twist" << twist);
         
         kalman.Predict(twist,5.0); //Tentatively Works
         kalman.UpdateMeasurement(i);
@@ -126,28 +128,28 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
         kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         kalman.UpdateCovariance();
 
-        arma::mat K = kalman.get_K();
-        ROS_WARN("K matrix");
-        K.print();
+        // arma::mat K = kalman.get_K();
+        // ROS_WARN("K matrix");
+        // K.print();
         
-        arma::mat H = kalman.get_H();
-        ROS_WARN("H matrix");
-        H.print();
+        // arma::mat H = kalman.get_H();
+        // ROS_WARN("H matrix");
+        // H.print();
 
-        arma::mat zhat = kalman.get_zhat();
-        ROS_WARN("zhat matrix");
-        zhat.print();
+        // arma::mat zhat = kalman.get_zhat();
+        // ROS_WARN("zhat matrix");
+        // zhat.print();
 
-        arma::mat sigma = kalman.get_Sigma();
-        ROS_WARN("sigma matrix");
-        sigma.print();
+        // arma::mat sigma = kalman.get_Sigma();
+        // ROS_WARN("sigma matrix");
+        // sigma.print();
     }
 
     init_flag = 0;    
 
-    arma::colvec Xi = kalman.get_Xi();
-    ROS_WARN("Xi matrix");
-    Xi.print();
+    // arma::colvec Xi = kalman.get_Xi();
+    // ROS_WARN("Xi matrix");
+    // Xi.print();
 
     
 
@@ -227,7 +229,7 @@ int main(int argc, char * argv[])
 
     drive.setConfig(initial_config);
     kalman.EKFilter_init(initial_config, 3);
-    kalman.init_Q(0.0);
+    kalman.init_Q(0.001);
 
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;

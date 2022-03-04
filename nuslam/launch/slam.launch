@@ -65,7 +65,7 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="map_broadcaster" args="0 0 0 0 0 0 1 world map" />
     
     <group if="$(arg use_rviz)">
-        <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuturtle_control)/config/start_robot.rviz" if="$(eval arg('robot') == 'nusim')"/>
+        <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuslam)/config/slam_robot.rviz" if="$(eval arg('robot') == 'nusim')"/>
         <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuturtle_control)/config/start_robot_blue.rviz" if="$(eval arg('robot') != 'nusim')"/>
     </group>
 

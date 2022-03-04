@@ -165,7 +165,7 @@ int main(int argc, char * argv[])
 
         /// Make the transform from the odom frame to the body frame
         transformStamped.header.stamp = ros::Time::now();
-        transformStamped.header.frame_id = odom_frame;
+        transformStamped.header.frame_id = "world";
         transformStamped.child_frame_id = body_id;
         transformStamped.transform.translation.x = turtle_config.x;
         transformStamped.transform.translation.y = turtle_config.y;

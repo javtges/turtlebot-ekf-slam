@@ -69,22 +69,22 @@ namespace nuslam{
         angle = turtlelib::normalize_angle(angle);
         
         
-        ROS_ERROR("Xi?");
-        Xi.print();
-        ROS_ERROR("M?");
-        m.print();
-        ROS_ERROR_STREAM(m(2*j,0));
-        ROS_ERROR_STREAM(m(2*j+1,0));
-        ROS_ERROR_STREAM(Xi(0,0));
-        ROS_ERROR_STREAM(Xi(1,0));
-        ROS_ERROR_STREAM(rad);
-        ROS_ERROR_STREAM(angle);
+        // ROS_ERROR("Xi?");
+        // Xi.print();
+        // ROS_ERROR("M?");
+        // m.print();
+        // ROS_ERROR_STREAM(m(2*j,0));
+        // ROS_ERROR_STREAM(m(2*j+1,0));
+        // ROS_ERROR_STREAM(Xi(0,0));
+        // ROS_ERROR_STREAM(Xi(1,0));
+        // ROS_ERROR_STREAM(rad);
+        // ROS_ERROR_STREAM(angle);
 
         z_hat(0,0) = rad;
         z_hat(1,0) = angle;
 
-        ROS_ERROR("ZHAT");
-        z_hat.print();
+        // ROS_ERROR("ZHAT");
+        // z_hat.print();
 
         double deltaX = Xi(2*j+3,0) - Xi(0,0);
         double deltaY = Xi(2*j + 4,0) - Xi(1,0);
@@ -113,8 +113,8 @@ namespace nuslam{
         // Make Sigma
 
         arma::mat KH = K*H;
-        ROS_WARN("KH matrix");
-        KH.print();
+        // ROS_WARN("KH matrix");
+        // KH.print();
         arma::mat I = arma::eye(arma::size(KH));
         Sigma = (I - KH) * Sigma;
     }
@@ -130,13 +130,14 @@ namespace nuslam{
         diff = z-z_hat;
         diff(1,0) = turtlelib::normalize_angle(diff(1,0));
 
-        ROS_ERROR("XI");
-        // z.print();
-        // z_hat.print();
-        // K.print();
-        // Xi.print();
+        ROS_ERROR("XI, DIFF, AND SUCH");
+        z.print("Z");
+        z_hat.print("ZHAT");
+        K.print("K");
+        Xi.print("XI");
+        diff.print("diff");
 
-        Xi = Xi + K * diff;
+        Xi = Xi + (K * diff);
 
         // Xi.print();
     }
@@ -145,41 +146,48 @@ namespace nuslam{
         // Make K
         arma::mat R(2,2, arma::fill::eye);
         R *= 0.001;
+        R.print("R");
 
-        K = Sigma * H.t() * (H * Sigma * H.t() + R).i();
+        ROS_INFO_STREAM_ONCE("Sigma right before K" << Sigma);
+        // Sigma.print();
+        H.print("H when calculating K");
+        Sigma.print("Sigma when calculating K");
+
+        K = (Sigma * H.t()) * (H * Sigma * H.t() + R).i();
+
+        ROS_INFO_STREAM_ONCE("K first" << K);
+
 
     }
 
     void EKFilter::Predict(turtlelib::Twist2D twist, double time){
         // Integrate twist, updating the estimate
         //Find A Matrix, Compute Sigma = At * Sigma * At.t() + Q_bar;
-        int length = Xi.n_rows;
         arma::mat At = arma::eye(3+2*n, 3+2*n);
 
         if(turtlelib::almost_equal(twist.thetadot, 0.0)){
             // If almost zero rotation:
             Xi(0,0) += 0;
-            Xi(1,0) += twist.xdot * std::cos(Xi(0)) / time; 
-            Xi(2,0) += twist.xdot * std::sin(Xi(0)) / time;
+            Xi(1,0) += twist.xdot * std::cos(Xi(0,0)); 
+            Xi(2,0) += twist.xdot * std::sin(Xi(0,0));
 
-            At(1,0) += (-twist.xdot/time) * std::sin(Xi(0));
-            At(2,0) += (twist.xdot/time) * std::cos(Xi(0));
+            At(1,0) += (-twist.xdot) * std::sin(Xi(0,0));
+            At(2,0) += (twist.xdot) * std::cos(Xi(0,0));
         }
 
         else{
-
-            Xi(0,0) += twist.thetadot / time;
+            Xi(0,0) += twist.thetadot;
             Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
-            Xi(1,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0) + (twist.thetadot/time)));
-            Xi(2,0) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0))) - ((twist.xdot / twist.thetadot) * std::cos(Xi(0) + (twist.thetadot/time)));
+            Xi(1,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0,0) + (twist.thetadot)));
+            Xi(2,0) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) - ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0) + (twist.thetadot)));
         
-            At(1,0) += ((-twist.xdot / twist.thetadot) * std::cos(Xi(0))) + ((twist.xdot / twist.thetadot) * std::cos(Xi(0) + (twist.thetadot/time)));
-            At(2,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0) + (twist.thetadot/time)));
+            At(1,0) += ((-twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0) + (twist.thetadot)));
+            At(2,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0,0) + (twist.thetadot)));
         }
 
-        At.print();
+        // At.print();
 
-        Sigma = At * Sigma * At.t() + Q;
+        Sigma = (At * Sigma * At.t()) + Q;
     }
 
     void EKFilter::init_landmarks(int marker_id, double x, double y){
