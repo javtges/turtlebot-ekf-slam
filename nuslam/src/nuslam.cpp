@@ -121,22 +121,26 @@ namespace nuslam{
     }
 
     void EKFilter::UpdatePosState(double x, double y){
-        // Make Xi using X and Y of the fake sensor data in the map frame
+        // Make Xi using X and Y of the fake sensor data in the **map** frame
         arma::mat z(2,1);
-        z(0,0) = std::sqrt( std::pow(x,2) + std::pow(y,2) );
-        z(1,0) = std::atan2( y, x );
-        z(1,0) = turtlelib::normalize_angle(z(1,0));
+
+        double rad = std::sqrt( std::pow(x - Xi(1,0), 2) + std::pow(y - Xi(2,0), 2) ); //this is r_j
+        double angle = std::atan2( y, x ) - Xi(0,0); // This is phi_j
+        angle = turtlelib::normalize_angle(angle);
+        
+        z(0,0) = rad;
+        z(1,0) = angle;
 
         arma::mat diff(2,1);
         diff = z-z_hat;
         diff(1,0) = turtlelib::normalize_angle(diff(1,0));
 
-        ROS_ERROR("XI, DIFF, AND SUCH");
-        z.print("Z");
-        z_hat.print("ZHAT");
-        K.print("K");
-        Xi.print("XI");
-        diff.print("diff");
+        // ROS_ERROR("XI, DIFF, AND SUCH");
+        // z.print("Z");
+        // z_hat.print("ZHAT");
+        // K.print("K");
+        // Xi.print("XI");
+        // diff.print("diff");
 
         Xi = Xi + (K * diff);
 
@@ -148,8 +152,8 @@ namespace nuslam{
 
         ROS_INFO_STREAM_ONCE("Sigma right before K" << Sigma);
         // Sigma.print();
-        H.print("H when calculating K");
-        Sigma.print("Sigma when calculating K");
+        // H.print("H when calculating K");
+        // Sigma.print("Sigma when calculating K");
 
         K = (Sigma * H.t()) * (H * Sigma * H.t() + R).i();
 

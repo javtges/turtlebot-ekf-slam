@@ -56,6 +56,7 @@ static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
 static std::vector<double> positions, velocities, radii, x_locs, y_locs;
+static std::vector<turtlelib::Vector2D> markers_in_map(3);
 static nuslam::EKFilter kalman(3);
 
 
@@ -81,10 +82,12 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     drive.setSpeeds(currentSpeeds);
     drive.setAngles(currentAngles);
 
-    nextAngles.L = (currentSpeeds.Ldot/frequency) + currentAngles.L;
-    nextAngles.R = (currentSpeeds.Rdot/frequency) + currentAngles.R;
+    nextAngles.L = (currentSpeeds.Ldot/500) + currentAngles.L;
+    nextAngles.R = (currentSpeeds.Rdot/500) + currentAngles.R;
 
     twist = drive.get_twist_from_angles(currentSpeeds);
+
+    // ROS_ERROR_STREAM("SLAM Twist" << twist);
 
     drive.forward_kinematics(nextAngles);
 
@@ -116,15 +119,32 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
     int num_markers = msg.markers.size();
     for (int i=0; i<num_markers; i++){
         // PUT MARKER IN THE MAP FRAME!
+        // turtlelib::Vector2D sensor_vec;
+        // sensor_vec.x = msg.markers[i].pose.position.x;
+        // sensor_vec.y = msg.markers[i].pose.position.y;
+        // ROS_WARN_STREAM("before transformation" << sensor_vec);
+        
+        // turtlelib::Transform2D Tbm, Tbo;
+        // Tbm = Tmb.inv();
+        // Tbo = Tob.inv();
+        // ROS_WARN_STREAM(Tob);
+
+        // sensor_vec = Tob(sensor_vec); //We want the markers in the MAP frame
+        // ROS_WARN_STREAM("after transformation to the map frame" << sensor_vec);
+
         if (init_flag){
-            kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+            markers_in_map[i].x = msg.markers[i].pose.position.x;
+            markers_in_map[i].y = msg.markers[i].pose.position.y;
+            kalman.init_landmarks(msg.markers[i].id, markers_in_map[i].x, markers_in_map[i].y);
         }
         // ROS_WARN_STREAM("twist" << twist);
+
+        turtlelib::Twist2D input = {twist.thetadot / 5.0, twist.xdot / 5.0, twist.ydot / 5.0};
         
-        kalman.Predict(twist,5.0); //Tentatively Works
+        kalman.Predict(input,5.0); //Tentatively Works
         kalman.UpdateMeasurement(i);
         kalman.ComputeKalmanGains();
-        kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+        kalman.UpdatePosState(markers_in_map[i].x, markers_in_map[i].y);
         kalman.UpdateCovariance();
 
         // arma::mat K = kalman.get_K();
@@ -258,6 +278,9 @@ int main(int argc, char * argv[])
         // Get the current config of the turtlebot
         turtle_config = drive.getConfig();
 
+        Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the green base footprint
+        Tmo = Tmb * Tob.inv();
+
         /// Make the transform from the odom frame to the GREEN body frame
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = odom_frame;
@@ -274,24 +297,22 @@ int main(int argc, char * argv[])
 
         br.sendTransform(transformStamped);
 
-
         // Make and publish the odometry message using the current green turtle configuration
-        odom.header.stamp = ros::Time::now();
-        odom.header.frame_id = odom_frame;
-        odom.child_frame_id = body_id;
-        odom.pose.pose.position.x = turtle_config.x;
-        odom.pose.pose.position.y = turtle_config.y;
-        odom.pose.pose.position.z = 0;
-        tf2::Quaternion quat;
-        quat.setRPY(0,0,turtle_config.theta);
-        odom.pose.pose.orientation.x = quat.x();
-        odom.pose.pose.orientation.y = quat.y();
-        odom.pose.pose.orientation.z = quat.z();
-        odom.pose.pose.orientation.w = quat.w();
+        // odom.header.stamp = ros::Time::now();
+        // odom.header.frame_id = odom_frame;
+        // odom.child_frame_id = body_id;
+        // odom.pose.pose.position.x = turtle_config.x;
+        // odom.pose.pose.position.y = turtle_config.y;
+        // odom.pose.pose.position.z = 0;
+        // tf2::Quaternion quat;
+        // quat.setRPY(0,0,turtle_config.theta);
+        // odom.pose.pose.orientation.x = quat.x();
+        // odom.pose.pose.orientation.y = quat.y();
+        // odom.pose.pose.orientation.z = quat.z();
+        // odom.pose.pose.orientation.w = quat.w();
 
-        Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the green base footprint
-        Tmo = Tmb * Tob.inv();
 
+        // Tmo = Tmb; // JUST FOR TESTING
         // Make and publish the transform from map to odom in order to complete the tree
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "map";

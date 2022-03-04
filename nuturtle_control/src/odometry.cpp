@@ -83,6 +83,8 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
     drive.forward_kinematics(nextAngles);
 
+    ROS_ERROR_STREAM("ODOM Twist" << twist << "\r\n");
+
     odom.twist.twist.linear.x = twist.xdot;
     odom.twist.twist.linear.y = twist.ydot;
     odom.twist.twist.linear.z = 0;
