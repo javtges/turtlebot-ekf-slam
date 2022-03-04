@@ -47,7 +47,7 @@ static std::string odom_frame, body_id, wheel_left, wheel_right;
 static double x_0, y_0, theta_0;
 static int frequency;
 static int init_flag = 1;
-static turtlelib::Transform2D Tmb, Tob; //Mapt to robot, Odom to robot
+static turtlelib::Transform2D Tmb, Tob, Tmo; //Map to Robot, Odom to Robot, Map to Odom
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
 static turtlelib::Phidot wheel_speeds;
@@ -116,7 +116,6 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
     int num_markers = msg.markers.size();
     for (int i=0; i<num_markers; i++){
         // PUT MARKER IN THE MAP FRAME!
-
         if (init_flag){
             kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         }
@@ -143,6 +142,10 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
         // arma::mat sigma = kalman.get_Sigma();
         // ROS_WARN("sigma matrix");
         // sigma.print();
+
+        arma::mat Xi = kalman.get_Xi();
+        turtlelib::Vector2D xy{Xi(1,0), Xi(2,0)};
+        Tmb = turtlelib::Transform2D(xy,Xi(0,0)); //The transform from the map to the robot
     }
 
     init_flag = 0;    
@@ -221,15 +224,16 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     
     
-    ros::Subscriber joint_state_sub = n.subscribe("red/joint_states",10, joint_state_callback);
+    ros::Subscriber joint_state_sub = n.subscribe("/red/joint_states",10, joint_state_callback);
     ros::Subscriber fake_sensor_sub = n.subscribe("/nusim/fake_sensor", 10, fake_sensor_callback);
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
 
     // ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);
+    Tmb = turtlelib::Transform2D({initial_config.x, initial_config.y}, initial_config.theta); //Perhaps this should be set to (0,0)...
     kalman.EKFilter_init(initial_config, 3);
-    kalman.init_Q(0.001);
+    kalman.init_Q_R(0.001, 0.001);
 
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
@@ -254,10 +258,10 @@ int main(int argc, char * argv[])
         // Get the current config of the turtlebot
         turtle_config = drive.getConfig();
 
-        /// Make the transform from the odom frame to the body frame
+        /// Make the transform from the odom frame to the GREEN body frame
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = odom_frame;
-        transformStamped.child_frame_id = body_id;
+        transformStamped.child_frame_id = "green-base_footprint";
         transformStamped.transform.translation.x = turtle_config.x;
         transformStamped.transform.translation.y = turtle_config.y;
         transformStamped.transform.translation.z = 0;
@@ -268,10 +272,10 @@ int main(int argc, char * argv[])
         transformStamped.transform.rotation.z = q.z();
         transformStamped.transform.rotation.w = q.w();
 
-        // br.sendTransform(transformStamped);
+        br.sendTransform(transformStamped);
 
 
-        // Make and publish the odometry message using the current blue turtle configuration
+        // Make and publish the odometry message using the current green turtle configuration
         odom.header.stamp = ros::Time::now();
         odom.header.frame_id = odom_frame;
         odom.child_frame_id = body_id;
@@ -284,6 +288,25 @@ int main(int argc, char * argv[])
         odom.pose.pose.orientation.y = quat.y();
         odom.pose.pose.orientation.z = quat.z();
         odom.pose.pose.orientation.w = quat.w();
+
+        Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the green base footprint
+        Tmo = Tmb * Tob.inv();
+
+        // Make and publish the transform from map to odom in order to complete the tree
+        transformStamped.header.stamp = ros::Time::now();
+        transformStamped.header.frame_id = "map";
+        transformStamped.child_frame_id = odom_frame;
+        transformStamped.transform.translation.x = Tmo.translation().x;
+        transformStamped.transform.translation.y = Tmo.translation().y;
+        transformStamped.transform.translation.z = 0;
+        // tf2::Quaternion q;
+        q.setRPY(0, 0, Tmo.rotation());
+        transformStamped.transform.rotation.x = q.x();
+        transformStamped.transform.rotation.y = q.y();
+        transformStamped.transform.rotation.z = q.z();
+        transformStamped.transform.rotation.w = q.w();
+
+        br.sendTransform(transformStamped);
 
         // ROS_WARN_STREAM("publishing odom??");
         // odom_pub.publish(odom);

@@ -19,6 +19,7 @@ namespace nuslam{
             Sigma(arma::mat(3+2*n,3+2*n)),
             m(arma::mat(2*n,1)),
             Q(arma::mat(3+2*n,3+2*n)),
+            R(arma::mat (2,2, arma::fill::eye)),
             q(arma::mat(3,1)),
             z_hat(arma::mat(2,1))
 
@@ -144,9 +145,6 @@ namespace nuslam{
 
     void EKFilter::ComputeKalmanGains(){
         // Make K
-        arma::mat R(2,2, arma::fill::eye);
-        R *= 0.001;
-        R.print("R");
 
         ROS_INFO_STREAM_ONCE("Sigma right before K" << Sigma);
         // Sigma.print();
@@ -199,10 +197,12 @@ namespace nuslam{
         Xi((2*marker_id) + 4,0) = y;
     }
 
-    void EKFilter::init_Q(double val){
+    void EKFilter::init_Q_R(double val, double rval){
         for(int i=0; i<3; i++){
             Q(i,i) = val;
         }
+        R *= rval;
+        // R.print("R");
     }
 
     arma::mat EKFilter::get_Q(){

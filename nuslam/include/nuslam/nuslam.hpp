@@ -36,7 +36,7 @@ namespace nuslam
 
     void init_landmarks(int marker_id, double x, double y);
 
-    void init_Q(double val);
+    void init_Q_R(double val, double rval);
 
     arma::mat get_Q();
 
@@ -65,6 +65,7 @@ namespace nuslam
         arma::mat q {}; //(3); // Turtlebot pose 3x1
         arma::mat m {}; //(6); // Marker locations 2nx1
         arma::mat z_hat {}; //(2);
+        arma::mat R {};
         int n; //num rows
     };
 
