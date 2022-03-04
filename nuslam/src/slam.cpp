@@ -46,6 +46,8 @@
 static std::string odom_frame, body_id, wheel_left, wheel_right;
 static double x_0, y_0, theta_0;
 static int frequency;
+static int init_flag = 1;
+static turtlelib::Transform2D Tmb, Tob; //Mapt to robot, Odom to robot
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
 static turtlelib::Phidot wheel_speeds;
@@ -101,7 +103,8 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
         // LOOP THROUGH THE LANDMARKS
         // IF NOT INIT YET
             // kalman.init_landmarks(marker_id, double x, double y) <- make sure to do this all in the map frame
-            // kalman.init_Q;
+            // ^^ DONE, BUT WITH TRANSFORMS ISSUES
+            // kalman.init_Q; -> DONE
         // THE ORDER OF THE SLAM
             // kalman.predict(twist,time);
             // kalman.UpdateMeasurement(marker j) <- use the current Xi and robot position to find Z_hat
@@ -112,16 +115,45 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
 
     int num_markers = msg.markers.size();
     for (int i=0; i<num_markers; i++){
-        kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+        if (init_flag){
+            kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+        }
+        ROS_WARN_STREAM("twist" << twist);
+        
+        kalman.Predict(twist,5.0); //Tentatively Works
+        kalman.UpdateMeasurement(i);
+        kalman.ComputeKalmanGains();
+        kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+        kalman.UpdateCovariance();
+
+        arma::mat K = kalman.get_K();
+        ROS_WARN("K matrix");
+        K.print();
+        
+        arma::mat H = kalman.get_H();
+        ROS_WARN("H matrix");
+        H.print();
+
+        arma::mat zhat = kalman.get_zhat();
+        ROS_WARN("zhat matrix");
+        zhat.print();
+
+        arma::mat sigma = kalman.get_Sigma();
+        ROS_WARN("sigma matrix");
+        sigma.print();
     }
 
-    arma::colvec m_vec = kalman.get_m();
-    ROS_WARN("m matrix");
-    m_vec.print();
+    init_flag = 0;    
 
-    arma::mat sigma = kalman.get_Sigma();
-    ROS_WARN("sigma matrix");
-    sigma.print();
+    arma::colvec Xi = kalman.get_Xi();
+    ROS_WARN("Xi matrix");
+    Xi.print();
+
+    
+
+    // arma::mat Q = kalman.get_Q();
+    // ROS_WARN("Q matrix");
+    // Q.print();
     
 }
 
@@ -195,6 +227,7 @@ int main(int argc, char * argv[])
 
     drive.setConfig(initial_config);
     kalman.EKFilter_init(initial_config, 3);
+    kalman.init_Q(0.0);
 
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;

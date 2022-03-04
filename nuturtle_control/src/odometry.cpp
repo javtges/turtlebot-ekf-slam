@@ -182,7 +182,7 @@ int main(int argc, char * argv[])
 
         /// Make and publish the odometry message using the current blue turtle configuration
         odom.header.stamp = ros::Time::now();
-        odom.header.frame_id = odom_frame;
+        odom.header.frame_id = "world"; //previously odom_frame
         odom.child_frame_id = body_id;
         odom.pose.pose.position.x = turtle_config.x;
         odom.pose.pose.position.y = turtle_config.y;

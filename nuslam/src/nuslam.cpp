@@ -18,7 +18,7 @@ namespace nuslam{
             H(arma::mat(2,3+2*n)),
             Sigma(arma::mat(3+2*n,3+2*n)),
             m(arma::mat(2*n,1)),
-            Q(arma::mat(2,2)),
+            Q(arma::mat(3+2*n,3+2*n)),
             q(arma::mat(3,1)),
             z_hat(arma::mat(2,1))
 
@@ -64,24 +64,47 @@ namespace nuslam{
         // Given a range and a bearing, return an H matrix
         // H matrix is of dimensions
 
-        arma::colvec hj_Xi_t(2); // This is z_hat_i
-        hj_Xi_t(0) = std::sqrt( std::pow(m(2*j) - Xi(0), 2) + std::pow(m(2*j + 1) - Xi(1), 2) ); //this is r_j
-        hj_Xi_t(1) = std::atan2( m(2*j + 1), m(2*j)) - Xi(2); // This is phi_j
-        hj_Xi_t(1) = turtlelib::normalize_angle(hj_Xi_t(1));
-        z_hat = hj_Xi_t;
-
-        double deltaX = m(2*j) - Xi(0);
-        double deltaY = m(2*j + 1) - Xi(1);
-        double d = std::pow(deltaX,2) + std::pow(deltaY,2);
-        n = m.n_rows;
-
-        arma::mat H_j_left(2,2);
-        arma::mat H_j_right(2,2);
-        arma::mat zeros_left(2,2*(j-1), arma::fill::zeros);
-        arma::mat zeros_right(2,2*(n-j), arma::fill::zeros);
-
-        H = arma::join_rows(H_j_left, zeros_left, H_j_right, zeros_right);
+        double rad = std::sqrt( std::pow(Xi(2*j+3,0) - Xi(1,0), 2) + std::pow(Xi(2*j+4,0) - Xi(2,0), 2) ); //this is r_j
+        double angle = std::atan2( Xi(2*j+4,0), Xi(2*j+3,0)) - Xi(0,0); // This is phi_j
+        angle = turtlelib::normalize_angle(angle);
         
+        
+        ROS_ERROR("Xi?");
+        Xi.print();
+        ROS_ERROR("M?");
+        m.print();
+        ROS_ERROR_STREAM(m(2*j,0));
+        ROS_ERROR_STREAM(m(2*j+1,0));
+        ROS_ERROR_STREAM(Xi(0,0));
+        ROS_ERROR_STREAM(Xi(1,0));
+        ROS_ERROR_STREAM(rad);
+        ROS_ERROR_STREAM(angle);
+
+        z_hat(0,0) = rad;
+        z_hat(1,0) = angle;
+
+        ROS_ERROR("ZHAT");
+        z_hat.print();
+
+        double deltaX = Xi(2*j+3,0) - Xi(0,0);
+        double deltaY = Xi(2*j + 4,0) - Xi(1,0);
+        double d = std::pow(deltaX,2) + std::pow(deltaY,2);
+        // n = m.n_rows;
+
+        H = arma::mat(2,3+2*n, arma::fill::zeros);
+
+        H(0,0) = 0;
+        H(0,1) = -deltaX / std::sqrt(d);
+        H(0,2) = deltaY / d;
+        H(1,0) = -1;
+        H(1,1) = -deltaY / std::sqrt(d);
+        H(1,2) = -deltaX / d;
+
+        H(0,2*j+3) = deltaX / std::sqrt(d);
+        H(0,2*j+4) = deltaY / std::sqrt(d);
+        H(1,2*j+3) = -deltaY / d;
+        H(1,2*j+4) = deltaX / d;
+
     }
 
     void EKFilter::UpdateCovariance(){
@@ -90,23 +113,40 @@ namespace nuslam{
         // Make Sigma
 
         arma::mat KH = K*H;
+        ROS_WARN("KH matrix");
+        KH.print();
         arma::mat I = arma::eye(arma::size(KH));
         Sigma = (I - KH) * Sigma;
     }
 
     void EKFilter::UpdatePosState(double x, double y){
         // Make Xi using X and Y of the fake sensor data in the map frame
-        arma::colvec z(2);
-        z(0) = std::sqrt( std::pow(x,2) + std::pow(y,2) );
-        z(1) = std::atan2( y, x );
-        z(1) = turtlelib::normalize_angle(z(1));
+        arma::mat z(2,1);
+        z(0,0) = std::sqrt( std::pow(x,2) + std::pow(y,2) );
+        z(1,0) = std::atan2( y, x );
+        z(1,0) = turtlelib::normalize_angle(z(1,0));
 
-        Xi = Xi + K * (z - z_hat);
+        arma::mat diff(2,1);
+        diff = z-z_hat;
+        diff(1,0) = turtlelib::normalize_angle(diff(1,0));
+
+        ROS_ERROR("XI");
+        // z.print();
+        // z_hat.print();
+        // K.print();
+        // Xi.print();
+
+        Xi = Xi + K * diff;
+
+        // Xi.print();
     }
 
     void EKFilter::ComputeKalmanGains(){
         // Make K
-        K = Sigma * H.t() * (H * Sigma * H.t()).i();
+        arma::mat R(2,2, arma::fill::eye);
+        R *= 0.001;
+
+        K = Sigma * H.t() * (H * Sigma * H.t() + R).i();
 
     }
 
@@ -116,45 +156,45 @@ namespace nuslam{
         int length = Xi.n_rows;
         arma::mat At = arma::eye(3+2*n, 3+2*n);
 
-
         if(turtlelib::almost_equal(twist.thetadot, 0.0)){
             // If almost zero rotation:
-            Xi(0) += 0;
-            Xi(1) += twist.xdot * std::cos(Xi(0)) / time; 
-            Xi(2) += twist.xdot * std::sin(Xi(0)) / time;
+            Xi(0,0) += 0;
+            Xi(1,0) += twist.xdot * std::cos(Xi(0)) / time; 
+            Xi(2,0) += twist.xdot * std::sin(Xi(0)) / time;
 
             At(1,0) += (-twist.xdot/time) * std::sin(Xi(0));
             At(2,0) += (twist.xdot/time) * std::cos(Xi(0));
         }
+
         else{
-            Xi(0) += twist.thetadot / time;
-            Xi(1) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0) + (twist.thetadot/time)));
-            Xi(2) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0))) - ((twist.xdot / twist.thetadot) * std::cos(Xi(0) + (twist.thetadot/time)));
+
+            Xi(0,0) += twist.thetadot / time;
+            Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
+            Xi(1,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0) + (twist.thetadot/time)));
+            Xi(2,0) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0))) - ((twist.xdot / twist.thetadot) * std::cos(Xi(0) + (twist.thetadot/time)));
         
             At(1,0) += ((-twist.xdot / twist.thetadot) * std::cos(Xi(0))) + ((twist.xdot / twist.thetadot) * std::cos(Xi(0) + (twist.thetadot/time)));
             At(2,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0) + (twist.thetadot/time)));
-
         }
 
-        arma::mat zeros_topright(3, 2*n, arma::fill::zeros);
-        arma::mat zeros_botleft(2*n, 3, arma::fill::zeros);
-        arma::mat zeros_botright(2*n, 2*n, arma::fill::zeros);
-        arma::mat top = arma::join_rows(Q, zeros_topright);
-        arma::mat bot = arma::join_rows(zeros_botleft, zeros_botright);
-        arma::mat Q_bar = arma::join_cols(top,bot);
+        At.print();
 
-        Sigma = At * Sigma * At.t() + Q_bar;
+        Sigma = At * Sigma * At.t() + Q;
     }
 
     void EKFilter::init_landmarks(int marker_id, double x, double y){
         // Set the coordinates IN THE MAP FRAME
-        m(2*marker_id) = x;
-        m((2*marker_id) + 1) = y;
+        m(2*marker_id, 0) = x;
+        m((2*marker_id) + 1 , 0) = y;
+
+        Xi((2*marker_id) + 3,0) = x;
+        Xi((2*marker_id) + 4,0) = y;
     }
 
     void EKFilter::init_Q(double val){
-        arma::vec Q_diag(3, val);
-        Q = arma::diagmat(Q_diag);
+        for(int i=0; i<3; i++){
+            Q(i,i) = val;
+        }
     }
 
     arma::mat EKFilter::get_Q(){
