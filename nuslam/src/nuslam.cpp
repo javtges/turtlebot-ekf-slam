@@ -50,7 +50,7 @@ namespace nuslam{
         // arma::mat bot = arma::join_rows(zero_2nx3, Sigma_0m);
 
         for(int i=0; i<n*2; i++){
-            Sigma(i+3,i+3) = 1000;
+            Sigma(i+3,i+3) = 100000;
         }
 
         // Sigma(3,3) = 10000;
@@ -65,13 +65,17 @@ namespace nuslam{
         // Given a range and a bearing, return an H matrix
         // H matrix is of dimensions
 
-        double rad = std::sqrt( std::pow(Xi(2*j+3,0) - Xi(1,0), 2) + std::pow(Xi(2*j+4,0) - Xi(2,0), 2) ); //this is r_j
-        double angle = std::atan2( Xi(2*j+4,0), Xi(2*j+3,0)) - Xi(0,0); // This is phi_j
+        double deltaX = Xi((2*j)+3,0) - Xi(1,0);
+        double deltaY = Xi((2*j)+4,0) - Xi(2,0);
+        double d = std::pow(deltaX,2) + std::pow(deltaY,2);
+
+        double rad = std::sqrt( std::pow(deltaX, 2) + std::pow(deltaY, 2) ); //this is r_j
+        double angle = std::atan2( deltaY, deltaX) - Xi(0,0); // This is phi_j
         angle = turtlelib::normalize_angle(angle);
         
         
         // ROS_ERROR("Xi?");
-        // Xi.print();
+        // Xi.print("");
         // ROS_ERROR("M?");
         // m.print();
         // ROS_ERROR_STREAM(m(2*j,0));
@@ -87,18 +91,15 @@ namespace nuslam{
         // ROS_ERROR("ZHAT");
         // z_hat.print();
 
-        double deltaX = Xi(2*j+3,0) - Xi(0,0);
-        double deltaY = Xi(2*j + 4,0) - Xi(1,0);
-        double d = std::pow(deltaX,2) + std::pow(deltaY,2);
         // n = m.n_rows;
 
         H = arma::mat(2,3+2*n, arma::fill::zeros);
 
         H(0,0) = 0;
         H(0,1) = -deltaX / std::sqrt(d);
-        H(0,2) = deltaY / d;
+        H(0,2) = -deltaY / std::sqrt(d);
         H(1,0) = -1;
-        H(1,1) = -deltaY / std::sqrt(d);
+        H(1,1) = deltaY / d;
         H(1,2) = -deltaX / d;
 
         H(0,2*j+3) = deltaX / std::sqrt(d);
@@ -118,14 +119,15 @@ namespace nuslam{
         // KH.print();
         arma::mat I = arma::eye(arma::size(KH));
         Sigma = (I - KH) * Sigma;
+        // Sigma.print("Sigma after printing");
     }
 
     void EKFilter::UpdatePosState(double x, double y){
         // Make Xi using X and Y of the fake sensor data in the **map** frame
         arma::mat z(2,1);
 
-        double rad = std::sqrt( std::pow(x - Xi(1,0), 2) + std::pow(y - Xi(2,0), 2) ); //this is r_j
-        double angle = std::atan2( y, x ) - Xi(0,0); // This is phi_j
+        double rad = std::sqrt( std::pow(x, 2) + std::pow(y, 2) ); //this is r_j
+        double angle = std::atan2( y, x ); // This is phi_j
         angle = turtlelib::normalize_angle(angle);
         
         z(0,0) = rad;
@@ -155,7 +157,7 @@ namespace nuslam{
         // H.print("H when calculating K");
         // Sigma.print("Sigma when calculating K");
 
-        K = (Sigma * H.t()) * (H * Sigma * H.t() + R).i();
+        K = (Sigma * H.t()) * ((H * Sigma * H.t()) + R).i();
 
         ROS_INFO_STREAM_ONCE("K first" << K);
 
@@ -165,31 +167,41 @@ namespace nuslam{
     void EKFilter::Predict(turtlelib::Twist2D twist, double time){
         // Integrate twist, updating the estimate
         //Find A Matrix, Compute Sigma = At * Sigma * At.t() + Q_bar;
-        arma::mat At = arma::eye(3+2*n, 3+2*n);
+        arma::mat At_eye = arma::eye(3+2*n, 3+2*n);
+        arma::mat At = arma::mat(3+2*n, 3+2*n, arma::fill::zeros);
+        arma::mat A = arma::mat(3+2*n, 3+2*n, arma::fill::zeros);
 
         if(turtlelib::almost_equal(twist.thetadot, 0.0)){
             // If almost zero rotation:
+            At(1,0) = (-twist.xdot) * std::sin(Xi(0,0));
+            At(2,0) = (twist.xdot) * std::cos(Xi(0,0));
+
             Xi(0,0) += 0;
             Xi(1,0) += twist.xdot * std::cos(Xi(0,0)); 
             Xi(2,0) += twist.xdot * std::sin(Xi(0,0));
 
-            At(1,0) += (-twist.xdot) * std::sin(Xi(0,0));
-            At(2,0) += (twist.xdot) * std::cos(Xi(0,0));
         }
 
         else{
+            // Xi(0,0) += twist.thetadot;
+            At(1,0) = ((-twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::cos( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
+            At(2,0) = ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
+            At.print("At before I addition");
+
+            Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
+            Xi(1,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
+            Xi(2,0) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) - ((twist.xdot / twist.thetadot) * std::cos( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
+
             Xi(0,0) += twist.thetadot;
             Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
-            Xi(1,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0,0) + (twist.thetadot)));
-            Xi(2,0) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) - ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0) + (twist.thetadot)));
         
-            At(1,0) += ((-twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0) + (twist.thetadot)));
-            At(2,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin(Xi(0,0) + (twist.thetadot)));
         }
 
-        // At.print();
+        A = At_eye + At;
+        // A.print("At Matrix");
 
-        Sigma = (At * Sigma * At.t()) + Q;
+        Sigma = (A * Sigma * A.t()) + Q;
+        // Sigma.print("Sigma before prediction");
     }
 
     void EKFilter::init_landmarks(int marker_id, double x, double y){

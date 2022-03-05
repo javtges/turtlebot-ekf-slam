@@ -290,7 +290,6 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
 
     turtlelib::Vector2D robot_to_world = Trw.translation();
 
-    double mag = std::sqrt(robot_to_world.x*robot_to_world.x + robot_to_world.y*robot_to_world.y);
     std::normal_distribution<> d(0, basic_sensor_variance); /// Args are mean,variance
 
     for (int i=0; i<l; i++){
@@ -300,6 +299,8 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
         turtlelib::Transform2D Trm(0);
         Trm = Trw * Twm;
         turtlelib::Vector2D robot_to_marker = Trm.translation();
+
+        double mag = std::sqrt(robot_to_marker.x*robot_to_marker.x + robot_to_marker.y*robot_to_marker.y);
 
         maTemp.markers[i].header.frame_id = "red-base_footprint";
         maTemp.markers[i].header.stamp = ros::Time::now();
@@ -739,8 +740,8 @@ int main(int argc, char * argv[])
             // ROS_ERROR_STREAM(ts.data);
             ma = simulateObstacles(radii, x_locs, y_locs);
             fake_sensor_pub.publish(ma);
-            simulateLidar();
-            laser_scan_pub.publish(laserScan);
+            // simulateLidar();
+            // laser_scan_pub.publish(laserScan);
             // Publish LIDAR data
         }
 

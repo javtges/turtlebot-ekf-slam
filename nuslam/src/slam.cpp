@@ -47,7 +47,7 @@ static std::string odom_frame, body_id, wheel_left, wheel_right;
 static double x_0, y_0, theta_0;
 static int frequency;
 static int init_flag = 1;
-static turtlelib::Transform2D Tmb, Tob, Tmo; //Map to Robot, Odom to Robot, Map to Odom
+static turtlelib::Transform2D Tmb, Tob, Tmo, Tob_slam; //Map to Robot, Odom to Robot, Map to Odom
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
 static turtlelib::Phidot wheel_speeds;
@@ -58,6 +58,7 @@ static nav_msgs::Odometry odom;
 static std::vector<double> positions, velocities, radii, x_locs, y_locs;
 static std::vector<turtlelib::Vector2D> markers_in_map(3);
 static nuslam::EKFilter kalman(3);
+static visualization_msgs::MarkerArray markers;
 
 
 /// \brief The callback function for the joint_state subscriber
@@ -87,7 +88,8 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
     twist = drive.get_twist_from_angles(currentSpeeds);
 
-    // ROS_ERROR_STREAM("SLAM Twist" << twist);
+    // ROS_ERROR_STREAM("SLAM Twist " << twist);
+    // ROS_ERROR_STREAM("SLAM next angles " << nextAngles.L << nextAngles.R);
 
     drive.forward_kinematics(nextAngles);
 
@@ -97,6 +99,12 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     odom.twist.twist.angular.x = 0;
     odom.twist.twist.angular.y = 0;
     odom.twist.twist.angular.z = twist.thetadot;
+
+    turtle_config = drive.getConfig();
+    Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the robot
+
+    ROS_WARN_STREAM("Tob, IN CALLBACK " << Tob);
+
 
 }
 
@@ -119,74 +127,76 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
     int num_markers = msg.markers.size();
     for (int i=0; i<num_markers; i++){
         // PUT MARKER IN THE MAP FRAME!
-        // turtlelib::Vector2D sensor_vec;
-        // sensor_vec.x = msg.markers[i].pose.position.x;
-        // sensor_vec.y = msg.markers[i].pose.position.y;
-        // ROS_WARN_STREAM("before transformation" << sensor_vec);
-        
-        // turtlelib::Transform2D Tbm, Tbo;
-        // Tbm = Tmb.inv();
-        // Tbo = Tob.inv();
-        // ROS_WARN_STREAM(Tob);
-
-        // sensor_vec = Tob(sensor_vec); //We want the markers in the MAP frame
-        // ROS_WARN_STREAM("after transformation to the map frame" << sensor_vec);
 
         if (init_flag){
-            markers_in_map[i].x = msg.markers[i].pose.position.x;
-            markers_in_map[i].y = msg.markers[i].pose.position.y;
-            kalman.init_landmarks(msg.markers[i].id, markers_in_map[i].x, markers_in_map[i].y);
+            kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         }
         // ROS_WARN_STREAM("twist" << twist);
 
-        turtlelib::Twist2D input = {twist.thetadot / 5.0, twist.xdot / 5.0, twist.ydot / 5.0};
+        // turtlelib::Twist2D input = {twist.thetadot / 5.0, twist.xdot / 5.0, twist.ydot / 5.0};
         
-        kalman.Predict(input,5.0); //Tentatively Works
+        kalman.Predict(twist,5.0); //Tentatively Works
         kalman.UpdateMeasurement(i);
         kalman.ComputeKalmanGains();
-        kalman.UpdatePosState(markers_in_map[i].x, markers_in_map[i].y);
+        // ROS_ERROR_STREAM("Input pose" << msg.markers[i].pose.position.x << " " << msg.markers[i].pose.position.y);
+        kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         kalman.UpdateCovariance();
-
-        // arma::mat K = kalman.get_K();
-        // ROS_WARN("K matrix");
-        // K.print();
-        
-        // arma::mat H = kalman.get_H();
-        // ROS_WARN("H matrix");
-        // H.print();
-
-        // arma::mat zhat = kalman.get_zhat();
-        // ROS_WARN("zhat matrix");
-        // zhat.print();
-
-        // arma::mat sigma = kalman.get_Sigma();
-        // ROS_WARN("sigma matrix");
-        // sigma.print();
-
-        arma::mat Xi = kalman.get_Xi();
-        turtlelib::Vector2D xy{Xi(1,0), Xi(2,0)};
-        Tmb = turtlelib::Transform2D(xy,Xi(0,0)); //The transform from the map to the robot
     }
 
     init_flag = 0;    
-
-    // arma::colvec Xi = kalman.get_Xi();
-    // ROS_WARN("Xi matrix");
-    // Xi.print();
-
-    
-
-    // arma::mat Q = kalman.get_Q();
-    // ROS_WARN("Q matrix");
-    // Q.print();
     
 }
 
-/// \brief The callback for the set_pose service
-/// Sets the new configuration of the turtlebot to the service request data
-/// \param &Request - the inputs to the service. For this type there is an x, y, and theta float64 input.
-/// \param &Response - the outputs of the service. For this type there are none.
-/// returns true if executed successfully
+visualization_msgs::MarkerArray markers_from_slam(){
+
+    arma::mat Xi = kalman.get_Xi();
+
+    int l = 3;
+    visualization_msgs::MarkerArray maTemp;
+    maTemp.markers.resize(l);
+
+    // std::normal_distribution<> d(0, basic_sensor_variance); /// Args are mean,variance
+
+    for (int i=0; i<l; i++){
+
+        double markerX = Xi((2*i)+3, 0);
+        double markerY = Xi((2*i)+4, 0);
+        double mag = std::sqrt(markerX*markerX + markerY*markerY);
+
+        maTemp.markers[i].header.frame_id = "map";
+        maTemp.markers[i].header.stamp = ros::Time::now();
+        maTemp.markers[i].ns = "slam_node";
+        maTemp.markers[i].id = i;
+        maTemp.markers[i].type = visualization_msgs::Marker::CYLINDER;
+        if (mag > 3.5){
+            maTemp.markers[i].action = visualization_msgs::Marker::DELETE;
+        }
+        else{
+            maTemp.markers[i].action = visualization_msgs::Marker::ADD;
+            // ROS_ERROR_STREAM("ADDING");
+        }
+        maTemp.markers[i].pose.position.x = markerX;
+        maTemp.markers[i].pose.position.z = 0.125;
+        maTemp.markers[i].pose.position.y = markerY;
+        maTemp.markers[i].pose.orientation.x = 0.0;
+        maTemp.markers[i].pose.orientation.y = 0.0;
+        maTemp.markers[i].pose.orientation.z = 0.0;
+        maTemp.markers[i].pose.orientation.w = 1.0;
+
+        maTemp.markers[i].scale.x = 0.038*2;
+        maTemp.markers[i].scale.y = 0.038*2;
+        maTemp.markers[i].scale.z = 0.25;
+
+        maTemp.markers[i].color.r = 1.0;
+        maTemp.markers[i].color.g = 1.0;
+        maTemp.markers[i].color.b = 0.0;
+        maTemp.markers[i].color.a = 1.0;
+        maTemp.markers[i].lifetime = ros::Duration(0);
+    }
+    return maTemp;
+
+}
+
 
 // bool set_poseCallback(nuturtle_control::SetPose::Request &Request, nuturtle_control::SetPose::Response &){
 //     // Reset the position of the odometry according to the request.
@@ -247,16 +257,18 @@ int main(int argc, char * argv[])
     ros::Subscriber joint_state_sub = n.subscribe("/red/joint_states",10, joint_state_callback);
     ros::Subscriber fake_sensor_sub = n.subscribe("/nusim/fake_sensor", 10, fake_sensor_callback);
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
+    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("slam_obstacles",10);
 
     // ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);
     Tmb = turtlelib::Transform2D({initial_config.x, initial_config.y}, initial_config.theta); //Perhaps this should be set to (0,0)...
     kalman.EKFilter_init(initial_config, 3);
-    kalman.init_Q_R(0.001, 0.001);
+    kalman.init_Q_R(0.01, 0.01);
 
     tf2_ros::TransformBroadcaster br;
-    geometry_msgs::TransformStamped transformStamped;
+    geometry_msgs::TransformStamped transformStamped_ob;
+    geometry_msgs::TransformStamped transformStamped_mo;
 
     // IN SUBSCRIBER CALLBACK FOR FAKE_SENSOR:
         // LOOP THROUGH THE LANDMARKS
@@ -278,24 +290,49 @@ int main(int argc, char * argv[])
         // Get the current config of the turtlebot
         turtle_config = drive.getConfig();
 
-        Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the green base footprint
+        arma::mat Xi = kalman.get_Xi();
+        turtlelib::Vector2D xy{Xi(1,0), Xi(2,0)};
+        Tmb = turtlelib::Transform2D(xy, Xi(0,0)); //The transform from the map to the robot - SLAM
+
+        // Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the robot
         Tmo = Tmb * Tob.inv();
 
-        /// Make the transform from the odom frame to the GREEN body frame
-        transformStamped.header.stamp = ros::Time::now();
-        transformStamped.header.frame_id = odom_frame;
-        transformStamped.child_frame_id = "green-base_footprint";
-        transformStamped.transform.translation.x = turtle_config.x;
-        transformStamped.transform.translation.y = turtle_config.y;
-        transformStamped.transform.translation.z = 0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, turtle_config.theta);
-        transformStamped.transform.rotation.x = q.x();
-        transformStamped.transform.rotation.y = q.y();
-        transformStamped.transform.rotation.z = q.z();
-        transformStamped.transform.rotation.w = q.w();
+        ROS_WARN_STREAM("Tmb " << Tmb);
+        ROS_WARN_STREAM("Tob " << Tob);
+        ROS_WARN_STREAM("Tmo " << Tmo);
 
-        br.sendTransform(transformStamped);
+        // Tob_slam = Tmo.inv() * Tmb;
+
+        transformStamped_mo.header.stamp = ros::Time::now();
+        transformStamped_mo.header.frame_id = "map";
+        transformStamped_mo.child_frame_id = odom_frame;
+        transformStamped_mo.transform.translation.x = Tmo.translation().x;
+        transformStamped_mo.transform.translation.y = Tmo.translation().y;
+        transformStamped_mo.transform.translation.z = 0;
+        tf2::Quaternion qm;
+        qm.setRPY(0, 0, Tmo.rotation());
+        transformStamped_mo.transform.rotation.x = qm.x();
+        transformStamped_mo.transform.rotation.y = qm.y();
+        transformStamped_mo.transform.rotation.z = qm.z();
+        transformStamped_mo.transform.rotation.w = qm.w();
+
+        br.sendTransform(transformStamped_mo);
+
+        /// Make the transform from the odom frame to the GREEN body frame - needs to be Tob
+        transformStamped_ob.header.stamp = ros::Time::now();
+        transformStamped_ob.header.frame_id = odom_frame;
+        transformStamped_ob.child_frame_id = "green-base_footprint";
+        transformStamped_ob.transform.translation.x =  Tob.translation().x;
+        transformStamped_ob.transform.translation.y = Tob.translation().y;
+        transformStamped_ob.transform.translation.z = 0;
+        tf2::Quaternion q;
+        q.setRPY(0, 0, Tob.rotation());
+        transformStamped_ob.transform.rotation.x = q.x();
+        transformStamped_ob.transform.rotation.y = q.y();
+        transformStamped_ob.transform.rotation.z = q.z();
+        transformStamped_ob.transform.rotation.w = q.w();
+
+        br.sendTransform(transformStamped_ob);
 
         // Make and publish the odometry message using the current green turtle configuration
         // odom.header.stamp = ros::Time::now();
@@ -314,23 +351,13 @@ int main(int argc, char * argv[])
 
         // Tmo = Tmb; // JUST FOR TESTING
         // Make and publish the transform from map to odom in order to complete the tree
-        transformStamped.header.stamp = ros::Time::now();
-        transformStamped.header.frame_id = "map";
-        transformStamped.child_frame_id = odom_frame;
-        transformStamped.transform.translation.x = Tmo.translation().x;
-        transformStamped.transform.translation.y = Tmo.translation().y;
-        transformStamped.transform.translation.z = 0;
-        // tf2::Quaternion q;
-        q.setRPY(0, 0, Tmo.rotation());
-        transformStamped.transform.rotation.x = q.x();
-        transformStamped.transform.rotation.y = q.y();
-        transformStamped.transform.rotation.z = q.z();
-        transformStamped.transform.rotation.w = q.w();
-
-        br.sendTransform(transformStamped);
 
         // ROS_WARN_STREAM("publishing odom??");
         // odom_pub.publish(odom);
+
+        markers = markers_from_slam();
+        marker_pub.publish(markers);
+
 
         ros::spinOnce();
         r.sleep();

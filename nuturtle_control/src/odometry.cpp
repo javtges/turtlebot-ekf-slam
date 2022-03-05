@@ -83,7 +83,8 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
     drive.forward_kinematics(nextAngles);
 
-    ROS_ERROR_STREAM("ODOM Twist" << twist << "\r\n");
+    // ROS_ERROR_STREAM("ODOM Twist " << twist << " frequency " << frequency <<"\r\n");
+    // ROS_ERROR_STREAM("ODOM next angles " << nextAngles.L << nextAngles.R << "\r\n");
 
     odom.twist.twist.linear.x = twist.xdot;
     odom.twist.twist.linear.y = twist.ydot;
@@ -165,6 +166,9 @@ int main(int argc, char * argv[])
         /// Get the current config of the turtlebot
         turtle_config = drive.getConfig();
 
+        turtlelib::Transform2D blue_odom({turtle_config.x, turtle_config.y}, turtle_config.theta);
+
+        ROS_WARN_STREAM("ODOM Twblue " << blue_odom << "\r\n");
         /// Make the transform from the odom frame to the body frame
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "world";
