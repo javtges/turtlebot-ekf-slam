@@ -59,6 +59,7 @@ static std::vector<double> positions, velocities, radii, x_locs, y_locs;
 static std::vector<turtlelib::Vector2D> markers_in_map(3);
 static nuslam::EKFilter kalman(3);
 static visualization_msgs::MarkerArray markers;
+static long int counter=0;
 
 
 /// \brief The callback function for the joint_state subscriber
@@ -103,7 +104,7 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
     turtle_config = drive.getConfig();
     Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the robot
 
-    ROS_WARN_STREAM("Tob, IN CALLBACK " << Tob);
+    // ROS_WARN_STREAM("Tob, IN CALLBACK " << Tob);
 
 
 }
@@ -219,7 +220,7 @@ int main(int argc, char * argv[])
     ros::NodeHandle n;
 
     /// Gets the required values from the parameter server. Default values are provided for frequency, x0, y0, and theta0.
-    frequency = 5;
+    frequency = 500;
     n.param("/nusim/x0", x_0, 0.0);
     n.param("/nusim/y0", y_0, 0.0);
     n.param("/nusim/theta0", theta_0, 0.0);
@@ -259,6 +260,8 @@ int main(int argc, char * argv[])
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
     ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("slam_obstacles",10);
 
+    // ros::Timer timer = n.createTimer(ros::Duration(1/5), timerCallback);
+
     // ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
 
     drive.setConfig(initial_config);
@@ -297,9 +300,9 @@ int main(int argc, char * argv[])
         // Tob = turtlelib::Transform2D({turtle_config.x, turtle_config.y}, turtle_config.theta); // This is the transform from odom to the robot
         Tmo = Tmb * Tob.inv();
 
-        ROS_WARN_STREAM("Tmb " << Tmb);
-        ROS_WARN_STREAM("Tob " << Tob);
-        ROS_WARN_STREAM("Tmo " << Tmo);
+        // ROS_WARN_STREAM("Tmb " << Tmb);
+        // ROS_WARN_STREAM("Tob " << Tob);
+        // ROS_WARN_STREAM("Tmo " << Tmo);
 
         // Tob_slam = Tmo.inv() * Tmb;
 
@@ -355,10 +358,12 @@ int main(int argc, char * argv[])
         // ROS_WARN_STREAM("publishing odom??");
         // odom_pub.publish(odom);
 
-        markers = markers_from_slam();
-        marker_pub.publish(markers);
+        if (counter % 100 == 0){
+            markers = markers_from_slam();
+            marker_pub.publish(markers);
+        }
 
-
+        counter++;
         ros::spinOnce();
         r.sleep();
     }

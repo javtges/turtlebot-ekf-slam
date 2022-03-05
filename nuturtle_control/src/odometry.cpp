@@ -168,7 +168,7 @@ int main(int argc, char * argv[])
 
         turtlelib::Transform2D blue_odom({turtle_config.x, turtle_config.y}, turtle_config.theta);
 
-        ROS_WARN_STREAM("ODOM Twblue " << blue_odom << "\r\n");
+        // ROS_WARN_STREAM("ODOM Twblue " << blue_odom << "\r\n");
         /// Make the transform from the odom frame to the body frame
         transformStamped.header.stamp = ros::Time::now();
         transformStamped.header.frame_id = "world";
