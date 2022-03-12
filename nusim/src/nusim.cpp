@@ -17,6 +17,7 @@
 #include <geometry_msgs/Twist.h>
 #include <turtlesim/Pose.h>
 #include "nusim/teleport.h"
+#include <nav_msgs/Path.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 #include <nuturtlebot_msgs/SensorData.h>
@@ -69,7 +70,9 @@ static turtlelib::Phi wheel_angles, wheel_angles_old;
 static turtlelib::Phidot wheel_speeds;
 static turtlelib::Q turtle_config, previous_config;
 static sensor_msgs::LaserScan laserScan;
-static ros::Publisher fake_sensor_pub, laser_scan_pub;
+static ros::Publisher fake_sensor_pub, laser_scan_pub, path_pub;
+static geometry_msgs::PoseStamped red_pose;
+static nav_msgs::Path red_path;
 
 
 /// \brief The callback function for the reset service. Resets the timestamp counter and teleports the turtlebot back to its starting pose.
@@ -610,6 +613,21 @@ void timerCallback(const ros::TimerEvent&){
 
     simulateLidar();
     laser_scan_pub.publish(laserScan);
+
+
+    turtle_config = drive.getConfig();
+
+    red_path.header.stamp = ros::Time::now();
+    red_path.header.frame_id = "world";
+    
+    red_pose.header.stamp = ros::Time::now();
+    red_pose.header.frame_id = "world";
+    red_pose.pose.position.x = turtle_config.x;
+    red_pose.pose.position.y = turtle_config.y;
+
+    red_path.poses.push_back(red_pose);
+
+    path_pub.publish(red_path);
 }
 
 
@@ -668,6 +686,7 @@ int main(int argc, char * argv[])
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
 
     ros::Timer timer = n.createTimer(ros::Duration(0.2), timerCallback);
+    path_pub = n.advertise<nav_msgs::Path>("red_path", 100);
 
     ts.data = 0;
     wheel_angles.L = 0.0;

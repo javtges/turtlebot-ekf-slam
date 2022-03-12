@@ -11,6 +11,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 #include <turtlesim/Pose.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -60,8 +61,10 @@ static std::vector<turtlelib::Vector2D> markers_in_map(3);
 static nuslam::EKFilter kalman(3);
 static visualization_msgs::MarkerArray markers;
 static long int counter=0;
-static ros::Publisher odom_pub, marker_pub;
-
+static ros::Publisher odom_pub, marker_pub, path_pub;
+static nav_msgs::Path green_path;
+static geometry_msgs::PoseStamped green_pose;
+static arma::mat Xi;
 
 /// \brief The callback function for the joint_state subscriber
 /// Calculates the new turtlebot configuration, determines the instanteous twist, and begins populating the odometry message.
@@ -195,6 +198,18 @@ void timerCallback(const ros::TimerEvent&){
     odom_pub.publish(odom);
     markers = markers_from_slam();
     marker_pub.publish(markers);
+
+    green_path.header.stamp = ros::Time::now();
+    green_path.header.frame_id = "world";
+    
+    green_pose.header.stamp = ros::Time::now();
+    green_pose.header.frame_id = "world";
+    green_pose.pose.position.x = Xi(1,0);
+    green_pose.pose.position.y = Xi(2,0);
+
+    green_path.poses.push_back(green_pose);
+
+    path_pub.publish(green_path);
 }
 
 
@@ -237,6 +252,7 @@ int main(int argc, char * argv[])
     odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
     marker_pub = n.advertise<visualization_msgs::MarkerArray>("slam_obstacles",10);
     ros::Timer timer = n.createTimer(ros::Duration(0.2), timerCallback);
+    path_pub = n.advertise<nav_msgs::Path>("green_path", 100);
 
     // ros::Timer timer = n.createTimer(ros::Duration(1/5), timerCallback);
 
@@ -258,7 +274,7 @@ int main(int argc, char * argv[])
         // Get the current config of the turtlebot
         turtle_config = drive.getConfig();
         // ROS_WARN_STREAM("got config");
-        arma::mat Xi = kalman.get_Xi();
+        Xi = kalman.get_Xi();
         turtlelib::Vector2D xy{Xi(1,0), Xi(2,0)};
         Tmb = turtlelib::Transform2D(xy, Xi(0,0)); //The transform from the map to the robot - SLAM
 

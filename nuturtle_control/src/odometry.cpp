@@ -12,6 +12,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <turtlesim/Pose.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
@@ -51,7 +52,9 @@ static nuturtlebot_msgs::WheelCommands speeds;
 static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
 static std::vector<double> positions, velocities;
-
+static ros::Publisher path_pub;
+static geometry_msgs::PoseStamped blue_pose;
+static nav_msgs::Path blue_path;
 
 /// \brief The callback function for the joint_state subscriber
 /// Calculates the new turtlebot configuration, determines the instanteous twist, and begins populating the odometry message.
@@ -112,6 +115,23 @@ bool set_poseCallback(nuturtle_control::SetPose::Request &Request, nuturtle_cont
     return true;
 }
 
+void timerCallback(const ros::TimerEvent&){
+
+    turtle_config = drive.getConfig();
+
+    blue_path.header.stamp = ros::Time::now();
+    blue_path.header.frame_id = "world";
+    
+    blue_pose.header.stamp = ros::Time::now();
+    blue_pose.header.frame_id = "world";
+    blue_pose.pose.position.x = turtle_config.x;
+    blue_pose.pose.position.y = turtle_config.y;
+
+    blue_path.poses.push_back(blue_pose);
+
+    path_pub.publish(blue_path);
+}
+
 /// The main function and loop
 int main(int argc, char * argv[])
 {
@@ -153,6 +173,9 @@ int main(int argc, char * argv[])
     ros::Subscriber joint_state_sub = n.subscribe("red/joint_states",10, joint_state_callback);
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
     ros::ServiceServer setPoseService = nh.advertiseService("set_pose", set_poseCallback);
+    path_pub = n.advertise<nav_msgs::Path>("blue_path", 100);
+    ros::Timer timer = n.createTimer(ros::Duration(0.2), timerCallback);
+
 
     drive.setConfig(initial_config);
 
