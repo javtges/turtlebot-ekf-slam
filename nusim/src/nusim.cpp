@@ -69,6 +69,8 @@ static turtlelib::Phi wheel_angles, wheel_angles_old;
 static turtlelib::Phidot wheel_speeds;
 static turtlelib::Q turtle_config, previous_config;
 static sensor_msgs::LaserScan laserScan;
+static ros::Publisher fake_sensor_pub, laser_scan_pub;
+
 
 /// \brief The callback function for the reset service. Resets the timestamp counter and teleports the turtlebot back to its starting pose.
 /// \param &Request - the inputs to the service. For this type there are none.
@@ -288,7 +290,7 @@ visualization_msgs::MarkerArray simulateObstacles(std::vector<double> radii, std
     turtlelib::Transform2D Twr(current_vec,current_theta);
     turtlelib::Transform2D Trw = Twr.inv(); //World in robot frame
 
-    turtlelib::Vector2D robot_to_world = Trw.translation();
+    // turtlelib::Vector2D robot_to_world = Trw.translation();
 
     std::normal_distribution<> d(0, basic_sensor_variance); /// Args are mean,variance
 
@@ -383,7 +385,7 @@ void simulateLidar(){
         double current_theta = current_config.theta;
         // ROS_WARN("%f",current_theta);
         turtlelib::Transform2D Twb(current_vec,current_theta); // The robot in the world frame
-        turtlelib::Transform2D Tbw = Twb.inv(); // The world in the robot frame
+        // turtlelib::Transform2D Tbw = Twb.inv(); // The world in the robot frame
         // laserScan.ranges[i] = 3;
 
         // turtlelib::Vector2D robot_to_world = Trw.translation(); // the robot to the world vector
@@ -602,6 +604,15 @@ void simulateLidar(){
     }
 }
 
+void timerCallback(const ros::TimerEvent&){
+    ma = simulateObstacles(radii, x_locs, y_locs);
+    fake_sensor_pub.publish(ma);
+
+    simulateLidar();
+    laser_scan_pub.publish(laserScan);
+}
+
+
 /// The main function and loop.
 int main(int argc, char * argv[])
 {
@@ -647,15 +658,17 @@ int main(int argc, char * argv[])
     ros::Publisher obs_pub = nh.advertise<visualization_msgs::MarkerArray>("obstacles",10, true); //True means latched publisher
     ros::Publisher wall_pub = nh.advertise<visualization_msgs::MarkerArray>("walls",10, true); //True means latched publisher
     ros::Publisher sensor_data_pub = n.advertise<nuturtlebot_msgs::SensorData>("sensor_data",100);
-    ros::Publisher fake_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("fake_sensor",10);
-    ros::Publisher laser_scan_pub = n.advertise<sensor_msgs::LaserScan>("laser_data",10);
+    fake_sensor_pub = nh.advertise<visualization_msgs::MarkerArray>("fake_sensor",10);
+    laser_scan_pub = n.advertise<sensor_msgs::LaserScan>("laser_data",10);
 
     ros::Subscriber wheel_cmd_sub = n.subscribe("wheel_cmd",100,wheelCallback); 
 
     /// Setting up the services, and the robot's initial location.
     ros::ServiceServer resetService = nh.advertiseService("reset", resetCallback);
     ros::ServiceServer advertiseService = nh.advertiseService("teleport", teleportCallback);
-    
+
+    ros::Timer timer = n.createTimer(ros::Duration(0.2), timerCallback);
+
     ts.data = 0;
     wheel_angles.L = 0.0;
     wheel_angles.R = 0.0;
@@ -719,14 +732,26 @@ int main(int argc, char * argv[])
         previous_config = drive.getConfig();
         turtle_config = drive.forward_kinematics(wheel_angles);
 
-        for (int m=0; m<ma.markers.size(); m++){
+        for (int m=0; m<(int)ma.markers.size(); m++){
 
             // ROS_WARN_STREAM("turtle at :" << turtle_config.x << " " << turtle_config.y << "\r\n");
             // ROS_WARN_STREAM("marker at :" << ma.markers[m].pose.position.x << " " << ma.markers[m].pose.position.y << "\r\n");
             // ROS_WARN_STREAM(findDistance(0, 0, ma.markers[m].pose.position.x, ma.markers[m].pose.position.y) << "\r\n");
             
             if (findDistance(0, 0, ma.markers[m].pose.position.x, ma.markers[m].pose.position.y) < (collision_radius + (ma.markers[m].scale.x/2))){
-                drive.setConfig(previous_config);
+                
+                double theta = std::atan2(ma.markers[m].pose.position.y, ma.markers[m].pose.position.x);
+                
+                // turtlelib::Vector2D markervec = {x_locs[i], y_locs[i]};
+                // turtlelib::Transform2D Twm(markervec);
+                // turtlelib::Vector2D marker_in_world;
+
+                turtlelib::Q new_config;
+                new_config.x = x_locs[m] + (collision_radius + (ma.markers[m].scale.x/2)) * std::cos(theta);
+                new_config.y = y_locs[m] + (collision_radius + (ma.markers[m].scale.y/2)) * std::sin(theta);
+                new_config.theta = previous_config.theta;
+
+                drive.setConfig(new_config);
             }
         }
 
@@ -736,14 +761,15 @@ int main(int argc, char * argv[])
         wheel_angles_old.R = wheel_angles.R;
 
         // Use forward kinematics from DiffDrive to update the position of the robot
-        if (ts.data % 100 == 0){
-            // ROS_ERROR_STREAM(ts.data);
-            ma = simulateObstacles(radii, x_locs, y_locs);
-            fake_sensor_pub.publish(ma);
-            // simulateLidar();
-            // laser_scan_pub.publish(laserScan);
-            // Publish LIDAR data
-        }
+        // if (ts.data % 100 == 0){
+        //     // ROS_ERROR_STREAM(ts.data);
+        //     ma = simulateObstacles(radii, x_locs, y_locs);
+        //     fake_sensor_pub.publish(ma);
+
+        //     simulateLidar();
+        //     laser_scan_pub.publish(laserScan);
+        //     // Publish LIDAR data
+        // }
 
 
         /// Increment the timestamp, spin, and sleep for the 500Hz delay.

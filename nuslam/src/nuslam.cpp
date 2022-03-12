@@ -13,7 +13,7 @@ namespace nuslam{
 
     EKFilter::EKFilter(int n) :
             n(n),
-            Xi(arma::mat(9,1)),
+            Xi(arma::mat(3+2*n,1)),
             K(arma::mat(3+2*n,3+2*n)),
             H(arma::mat(2,3+2*n)),
             Sigma(arma::mat(3+2*n,3+2*n)),
@@ -25,7 +25,7 @@ namespace nuslam{
 
             {}
 
-    void EKFilter::EKFilter_init(turtlelib::Q robot_state, int num){
+    void EKFilter::EKFilter_init(turtlelib::Q robot_state){
         // Initialize Xi, m, and Sigma to zero
 
         // Make the Xi state vector
@@ -33,31 +33,10 @@ namespace nuslam{
         Xi(0,0) = robot_state.theta;
         Xi(1,0) = robot_state.x;
         Xi(2,0) = robot_state.y;
-        // m.set_size(2*n);
-        // m.fill(0.0);
-
-        // Xi = join_cols(Xi, m);
-        // Need to make the m part of the Xi
-
-        // Initialize Sigma to all Zeros
-        // arma::mat Sigma_0q(3, 3, arma::fill::zeros);
-        // arma::mat zero_3x2n(3, 2*n, arma::fill::zeros);
-        // arma::mat zero_2nx3(2*n, 3, arma::fill::zeros);
-        // arma::vec sigma_diag(n, 1000000);
-        // arma::mat Sigma_0m = arma::diagmat(sigma_diag);
-
-        // arma::mat top = arma::join_rows(Sigma_0q, zero_3x2n);
-        // arma::mat bot = arma::join_rows(zero_2nx3, Sigma_0m);
 
         for(int i=0; i<n*2; i++){
             Sigma(i+3,i+3) = 100000;
         }
-
-        // Sigma(3,3) = 10000;
-        // Sigma(4,4) = 10000;
-        // Sigma(5,5) = 10000;
-
-        // Sigma = arma::join_cols(top, bot);
 
     }
 
@@ -72,7 +51,6 @@ namespace nuslam{
         double rad = std::sqrt( std::pow(deltaX, 2) + std::pow(deltaY, 2) ); //this is r_j
         double angle = std::atan2( deltaY, deltaX) - Xi(0,0); // This is phi_j
         angle = turtlelib::normalize_angle(angle);
-        
         
         // ROS_ERROR("Xi?");
         // Xi.print("");
@@ -125,8 +103,13 @@ namespace nuslam{
     void EKFilter::UpdatePosState(double x, double y){
         // Make Xi using X and Y of the fake sensor data in the **map** frame
         arma::mat z(2,1);
+        arma::mat z_hat_new(2,1);
 
-        double rad = std::sqrt( std::pow(x, 2) + std::pow(y, 2) ); //this is r_j
+        // Make Zhat
+
+        // Make Z
+
+        double rad = std::sqrt( std::pow(x, 2) + std::pow(y, 2) ); //this is z_j
         double angle = std::atan2( y, x ); // This is phi_j
         angle = turtlelib::normalize_angle(angle);
         
@@ -137,48 +120,38 @@ namespace nuslam{
         diff = z-z_hat;
         diff(1,0) = turtlelib::normalize_angle(diff(1,0));
 
-        // ROS_ERROR("XI, DIFF, AND SUCH");
-        // z.print("Z");
-        // z_hat.print("ZHAT");
-        // K.print("K");
-        // Xi.print("XI");
-        // diff.print("diff");
-
         Xi = Xi + (K * diff);
 
-        // Xi.print();
     }
 
     void EKFilter::ComputeKalmanGains(){
         // Make K
 
-        ROS_INFO_STREAM_ONCE("Sigma right before K" << Sigma);
+        // ROS_INFO_STREAM_ONCE("Sigma right before K" << Sigma);
         // Sigma.print();
         // H.print("H when calculating K");
         // Sigma.print("Sigma when calculating K");
 
-        K = (Sigma * H.t()) * ((H * Sigma * H.t()) + R).i();
+        K = (Sigma * H.t()) * arma::inv((H * Sigma * H.t()) + R);
 
-        ROS_INFO_STREAM_ONCE("K first" << K);
+        // ROS_INFO_STREAM_ONCE("K first" << K);
 
 
     }
 
-    void EKFilter::Predict(turtlelib::Twist2D twist, double time){
+    void EKFilter::Predict(turtlelib::Twist2D twist){
         // Integrate twist, updating the estimate
         //Find A Matrix, Compute Sigma = At * Sigma * At.t() + Q_bar;
         arma::mat At_eye = arma::eye(3+2*n, 3+2*n);
         arma::mat At = arma::mat(3+2*n, 3+2*n, arma::fill::zeros);
         arma::mat A = arma::mat(3+2*n, 3+2*n, arma::fill::zeros);
+        arma::mat Xi_update = arma::mat(3 + 2*n, 1, arma::fill::zeros);
+
 
         if(turtlelib::almost_equal(twist.thetadot, 0.0)){
             // If almost zero rotation:
-            At(1,0) = (-twist.xdot) * std::sin(Xi(0,0));
+            At(1,0) = -1*(twist.xdot) * std::sin(Xi(0,0));
             At(2,0) = (twist.xdot) * std::cos(Xi(0,0));
-
-            Xi(0,0) += 0;
-            Xi(1,0) += twist.xdot * std::cos(Xi(0,0)); 
-            Xi(2,0) += twist.xdot * std::sin(Xi(0,0));
 
         }
 
@@ -186,14 +159,6 @@ namespace nuslam{
             // Xi(0,0) += twist.thetadot;
             At(1,0) = ((-twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::cos( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
             At(2,0) = ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
-            At.print("At before I addition");
-
-            Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
-            Xi(1,0) += ((-twist.xdot / twist.thetadot) * std::sin(Xi(0,0))) + ((twist.xdot / twist.thetadot) * std::sin( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
-            Xi(2,0) += ((twist.xdot / twist.thetadot) * std::cos(Xi(0,0))) - ((twist.xdot / twist.thetadot) * std::cos( turtlelib::normalize_angle(Xi(0,0) + (twist.thetadot)) ));
-
-            Xi(0,0) += twist.thetadot;
-            Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
         
         }
 
@@ -201,11 +166,17 @@ namespace nuslam{
         // A.print("At Matrix");
 
         Sigma = (A * Sigma * A.t()) + Q;
-        // Sigma.print("Sigma before prediction");
     }
 
     void EKFilter::init_landmarks(int marker_id, double x, double y){
         // Set the coordinates IN THE MAP FRAME
+        // ROS_WARN_STREAM("init landmarks?");
+
+        // double rad = std::sqrt( std::pow(x, 2) + std::pow(y, 2) ); //this is r_j
+        // double angle = std::atan2( y, x ); // This is phi_j
+        // angle = turtlelib::normalize_angle(angle);
+
+
         m(2*marker_id, 0) = x;
         m((2*marker_id) + 1 , 0) = y;
 
@@ -214,6 +185,7 @@ namespace nuslam{
     }
 
     void EKFilter::init_Q_R(double val, double rval){
+        // ROS_WARN_STREAM("INIT QR");
         for(int i=0; i<3; i++){
             Q(i,i) = val;
         }

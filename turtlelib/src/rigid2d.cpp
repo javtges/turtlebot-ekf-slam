@@ -100,9 +100,9 @@ namespace turtlelib{
     /// \param rad - the angle to be normalized
     /// \return the normalized angle
     double normalize_angle(double rad){
-        long double d = std::fmod(rad-PI, 2*PI);
+        long double d = std::fmod(rad-PI, (2*PI));
         if (d > 0){
-            d -= 2*PI;
+            d -= (2*PI);
         }
         return d + PI;
     }
