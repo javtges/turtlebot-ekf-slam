@@ -141,6 +141,8 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(slam_node src/slam.cpp)
+add_executable(landmarks_node src/landmarks.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -160,6 +162,13 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 target_link_libraries(slam_node
+  ${catkin_LIBRARIES}
+  ${ARMADILLO_LIBRARIES}
+  ${PROJECT_NAME}
+  turtlelib
+)
+
+target_link_libraries(landmarks_node
   ${catkin_LIBRARIES}
   ${ARMADILLO_LIBRARIES}
   ${PROJECT_NAME}
@@ -189,6 +198,10 @@ target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra)
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 install(TARGETS slam_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS landmarks_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
