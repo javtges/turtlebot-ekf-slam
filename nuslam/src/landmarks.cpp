@@ -108,134 +108,135 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
 
     for (int j=0; j<(int)clusters.size(); j++){ // loop through clusters
         int n = clusters.at(j).size();
-        double x_bar = 0.0, y_bar = 0.0, x_sum = 0.0, y_sum = 0.0, z_sum = 0.0, z_bar = 0.0;
-        double center_x, center_y, R;
-        arma::mat Z(n, 4);
+        if (n > 3){    // We need at least 4 points to say it's a circle or not (and also to not crash the program)
+            double x_bar = 0.0, y_bar = 0.0, x_sum = 0.0, y_sum = 0.0, z_sum = 0.0, z_bar = 0.0;
+            double center_x, center_y, R;
+            arma::mat Z(n, 4);
 
-        for (int k=0; k<n; k++){ // loop through points in cluster
-            x_sum += clusters.at(j).at(k).x;
-            y_sum += clusters.at(j).at(k).y;
-            z_sum += std::pow(clusters.at(j).at(k).x, 2) + std::pow(clusters.at(j).at(k).y, 2);
-        }
-
-        // Find averages
-        x_bar = x_sum / n ;
-        y_bar = y_sum / n ;
-        z_bar = z_sum / n ;
-
-        for (int l=0; l<n; l++){ // loop through points in cluster again
-            double x_i = clusters.at(j).at(l).x - x_bar;
-            double y_i = clusters.at(j).at(l).y - y_bar;
-            Z(l,0) = std::pow(x_i, 2) + std::pow(y_i, 2);
-            Z(l,1) = x_i;
-            Z(l,2) = y_i;
-            Z(l,3) = 1;
-        }
-
-        arma::mat M = (1/n) * Z.t() * Z;
-        arma::mat H = arma::eye(4,4);
-        H(0,0) = 8*z_bar;
-        H(0,3) = 2;
-        H(3,0) = 2;
-        H(3,3) = 0;
-        arma::mat H_inv = arma::eye(4,4);
-        H_inv(0,0) = 0;
-        H_inv(0,3) = 0.5;
-        H_inv(3,0) = 0.5;
-        H_inv(3,3) = -2*z_bar;
-
-        H_inv.print("H_inv");
-        H.print("H");
-        Z.print("Z");
-
-        // SINGULAR VALUE DECOMPOSITION -----------------------
-
-        arma::mat U;
-        arma::colvec sig_vec;
-        arma::mat V;
-        arma::colvec A(4);
-        arma::colvec A_star(4);
-
-        arma::svd(U, sig_vec, V, Z);
-
-        U.print("U");
-        sig_vec.print("sigma");
-        V.print("V");
-        arma::mat Sigma = arma::diagmat(sig_vec);
-
-        double min_sigma = sig_vec.min();
-
-        if (min_sigma < 1.0e-12){
-            A = V.col(3);
-        }
-        else{
-            arma::mat Y = V * Sigma * V.t();
-            arma::mat Q = Y * arma::inv(H) * Y;
-
-            Y.print("Y");
-            Q.print("Q");
-
-            arma::mat eigenvectors;
-            arma::colvec eigenvalues;
-
-            arma::eig_sym(eigenvalues, eigenvectors, Q);
-
-            eigenvalues.print("eigenvalues");
-            eigenvectors.print("eigenvectors");
-
-            double smallest_positive = 0.0;
-
-            for(int val=0; val<=3; val++){
-                if(eigenvalues(val) > 0 ){
-                    smallest_positive = eigenvalues(val);
-                    A_star = eigenvectors.col(val);
-                    ROS_WARN_STREAM("smallest positive " << smallest_positive);
-                    break;
-                }
+            for (int k=0; k<n; k++){ // loop through points in cluster
+                x_sum += clusters.at(j).at(k).x;
+                y_sum += clusters.at(j).at(k).y;
+                z_sum += std::pow(clusters.at(j).at(k).x, 2) + std::pow(clusters.at(j).at(k).y, 2);
             }
 
-            A = arma::inv(Y) * A_star;
+            // Find averages
+            x_bar = x_sum / n ;
+            y_bar = y_sum / n ;
+            z_bar = z_sum / n ;
 
-        } // end else (min_sigma > 10e-12)
+            for (int l=0; l<n; l++){ // loop through points in cluster again
+                double x_i = clusters.at(j).at(l).x - x_bar;
+                double y_i = clusters.at(j).at(l).y - y_bar;
+                Z(l,0) = std::pow(x_i, 2) + std::pow(y_i, 2);
+                Z(l,1) = x_i;
+                Z(l,2) = y_i;
+                Z(l,3) = 1;
+            }
 
-        // Find location of the center and the radius of the circle
+            arma::mat M = (1/n) * Z.t() * Z;
+            arma::mat H = arma::eye(4,4);
+            H(0,0) = 8*z_bar;
+            H(0,3) = 2;
+            H(3,0) = 2;
+            H(3,3) = 0;
+            arma::mat H_inv = arma::eye(4,4);
+            H_inv(0,0) = 0;
+            H_inv(0,3) = 0.5;
+            H_inv(3,0) = 0.5;
+            H_inv(3,3) = -2*z_bar;
 
-        A.print("A");
-        center_x = (-A(1) / (2*A(0))) + x_bar;
-        center_y = (-A(2) / (2*A(0))) + y_bar;
-        R = std::sqrt( (std::pow(A(1),2) + std::pow(A(2),2) - (4 * A(0) * A(3)) ) / (4 * std::pow(A(0),2)) );
+            H_inv.print("H_inv");
+            H.print("H");
+            Z.print("Z");
 
-        ROS_WARN_STREAM("circle center " << center_x << " " << center_y << " " << R);
+            // SINGULAR VALUE DECOMPOSITION -----------------------
 
-        // Now, determine if it's actually a circle or not
+            arma::mat U;
+            arma::colvec sig_vec;
+            arma::mat V;
+            arma::colvec A(4);
+            arma::colvec A_star(4);
 
-        turtlelib::Vector2D P1, P2, P;
-        double P1_P, P_P2, P1_P2, angle_mean, angle_stdev;
-        P1 = clusters.at(j).at(0);
-        P1 = clusters.at(j).at(n-1);
-        arma::colvec angles(n-2); // We'll store all the angles in here
-        P1_P2 = std::sqrt( std::pow( (P1.x - P2.x), 2) + std::pow( (P1.y - P2.y) , 2) );
+            arma::svd(U, sig_vec, V, Z);
 
-        for(int point = 1; point < n-1; point++){ // All the other points in the cluster are considered "P".
-            P = clusters.at(j).at(point);
-            P1_P = std::sqrt( std::pow( (P1.x - P.x), 2) + std::pow( (P1.y - P.y) , 2) );
-            P_P2 = std::sqrt( std::pow( (P2.x - P.x), 2) + std::pow( (P2.y - P.y) , 2) );
+            U.print("U");
+            sig_vec.print("sigma");
+            V.print("V");
+            arma::mat Sigma = arma::diagmat(sig_vec);
 
-            double numerator = std::pow(P1_P,2) + std::pow(P_P2,2) - std::pow(P1_P2,2);
-            double denom = 2*(P1_P * P_P2);
+            double min_sigma = sig_vec.min();
 
-            angles(point-1) = std::acos( (numerator/denom) );
+            if (min_sigma < 1.0e-12){
+                A = V.col(3);
+            }
+            else{
+                arma::mat Y = V * Sigma * V.t();
+                arma::mat Q = Y * arma::inv(H) * Y;
+
+                Y.print("Y");
+                Q.print("Q");
+
+                arma::mat eigenvectors;
+                arma::colvec eigenvalues;
+
+                arma::eig_sym(eigenvalues, eigenvectors, Q);
+
+                eigenvalues.print("eigenvalues");
+                eigenvectors.print("eigenvectors");
+
+                double smallest_positive = 0.0;
+
+                for(int val=0; val<=3; val++){
+                    if(eigenvalues(val) > 0 ){
+                        smallest_positive = eigenvalues(val);
+                        A_star = eigenvectors.col(val);
+                        ROS_WARN_STREAM("smallest positive " << smallest_positive);
+                        break;
+                    }
+                }
+
+                A = arma::inv(Y) * A_star;
+
+            } // end else (min_sigma > 10e-12)
+
+            // Find location of the center and the radius of the circle
+
+            A.print("A");
+            center_x = (-A(1) / (2*A(0))) + x_bar;
+            center_y = (-A(2) / (2*A(0))) + y_bar;
+            R = std::sqrt( (std::pow(A(1),2) + std::pow(A(2),2) - (4 * A(0) * A(3)) ) / (4 * std::pow(A(0),2)) );
+
+            ROS_WARN_STREAM("circle center " << center_x << " " << center_y << " " << R);
+
+            // Now, determine if it's actually a circle or not
+
+            turtlelib::Vector2D P1, P2, P;
+            double P1_P, P_P2, P1_P2, angle_mean, angle_stdev;
+            P1 = clusters.at(j).at(0);
+            P1 = clusters.at(j).at(n-1);
+            arma::colvec angles(n-2); // We'll store all the angles in here
+            P1_P2 = std::sqrt( std::pow( (P1.x - P2.x), 2) + std::pow( (P1.y - P2.y) , 2) );
+
+            for(int point = 1; point < n-1; point++){ // All the other points in the cluster are considered "P".
+                P = clusters.at(j).at(point);
+                P1_P = std::sqrt( std::pow( (P1.x - P.x), 2) + std::pow( (P1.y - P.y) , 2) );
+                P_P2 = std::sqrt( std::pow( (P2.x - P.x), 2) + std::pow( (P2.y - P.y) , 2) );
+
+                double numerator = std::pow(P1_P,2) + std::pow(P_P2,2) - std::pow(P1_P2,2);
+                double denom = 2*(P1_P * P_P2);
+
+                angles(point-1) = std::acos( (numerator/denom) );
+            }
+
+            angles.print("angles?");
+            angle_mean = arma::mean(angles);
+            angle_stdev = arma::stddev(angles);
+            ROS_WARN_STREAM("Angle mean, stdev "<< angle_mean <<" " << angle_stdev);
+
+            if ( (angle_mean < 2.6) && (angle_mean > 1.7) && (angle_stdev < 0.3 ) && (R > 0.0) && (R < 2.0) ){
+                ROS_ERROR_STREAM("A circle!");
+            }
         }
-
-        angles.print("angles?");
-        angle_mean = arma::mean(angles);
-        angle_stdev = arma::stddev(angles);
-        ROS_WARN_STREAM("Angle mean, stdev "<< angle_mean <<" " << angle_stdev);
-
-        if ( (angle_mean < 2.6) && (angle_mean > 1.7) && (angle_stdev < 0.3 )){
-            ROS_ERROR_STREAM("A circle!");
-        }
-        
     }// end of loop through clusters
 
 }
