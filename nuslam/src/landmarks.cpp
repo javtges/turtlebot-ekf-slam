@@ -148,10 +148,57 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
         H.print("H");
         Z.print("Z");
 
+        // SINGULAR VALUE DECOMPOSITION -----------------------
 
+        arma::mat U;
+        arma::colvec sig_vec;
+        arma::mat V;
+        arma::colvec A(4);
+        arma::colvec A_star(4);
 
+        arma::svd(U, sig_vec, V, Z);
 
+        U.print("U");
+        sig_vec.print("sigma");
+        V.print("V");
+        arma::mat Sigma = arma::diagmat(sig_vec);
 
+        double min_sigma = sig_vec.min();
+
+        if (min_sigma < 1.0e-12){
+            A = V.col(3);
+        }
+        else{
+            arma::mat Y = V * Sigma * V.t();
+            arma::mat Q = Y * arma::inv(H) * Y;
+
+            Y.print("Y");
+            Q.print("Q");
+
+            arma::mat eigenvectors;
+            arma::colvec eigenvalues;
+
+            arma::eig_sym(eigenvalues, eigenvectors, Q);
+
+            eigenvalues.print("eigenvalues");
+            eigenvectors.print("eigenvectors");
+
+            double smallest_positive = 0.0;
+
+            for(int val=0; val<=3; val++){
+                if(eigenvalues(val) > 0 ){
+                    smallest_positive = eigenvalues(val);
+                    A_star = eigenvectors.col(val);
+                    ROS_WARN_STREAM("smallest positive " << smallest_positive);
+                    break;
+                }
+            }
+
+            A = arma::inv(Y) * A_star;
+
+        } // end else (min_sigma > 10e-12)
+
+        A.print("A");
 
         
     }
