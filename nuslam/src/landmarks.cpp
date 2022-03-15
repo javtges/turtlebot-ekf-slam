@@ -26,7 +26,6 @@
 #include <armadillo>
 
 static int frequency;
-static int init_flag = 1;
 static double max_range, min_range;
 
 void laser_scan_callback(const sensor_msgs::LaserScan & msg){
@@ -34,7 +33,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
 
     int length = msg.ranges.size();
     double threshold = 0.2;
-    float range = 0.0, prev_range = 0.0, prev_distance = 0.0, distance = 0.0;
+    float range = 0.0, prev_range = 0.0;
     std::vector<std::vector<turtlelib::Vector2D>> clusters;
     int n_clusters = 0;
 
@@ -100,16 +99,17 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
     // ROS_WARN_STREAM( first_cluster.size() << " " << last_cluster.size());
 
     double first_distance = std::sqrt( std::pow(first.x,2) + std::pow(first.y,2) );
-    if (std::abs(first_distance - distance) < threshold){
+    if (std::abs(first_distance - range) < threshold){
         clusters.at(0).insert( clusters.at(0).end(), clusters.at(n_clusters-1).begin(), clusters.at(n_clusters-1).end() );
         clusters.pop_back(); // Removes last cluster
         ROS_WARN_STREAM("overlap clusters, " << clusters.at(0).size());
     }
     ROS_WARN_STREAM(clusters.size());
 
-    for (int j=0; j<clusters.size(); j++){ // loop through clusters
+    for (int j=0; j<(int)clusters.size(); j++){ // loop through clusters
         int n = clusters.at(j).size();
         double x_bar = 0.0, y_bar = 0.0, x_sum = 0.0, y_sum = 0.0, z_sum = 0.0, z_bar = 0.0;
+        double center_x, center_y, R;
         arma::mat Z(n, 4);
 
         for (int k=0; k<n; k++){ // loop through points in cluster
@@ -198,10 +198,45 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
 
         } // end else (min_sigma > 10e-12)
 
-        A.print("A");
+        // Find location of the center and the radius of the circle
 
+        A.print("A");
+        center_x = (-A(1) / (2*A(0))) + x_bar;
+        center_y = (-A(2) / (2*A(0))) + y_bar;
+        R = std::sqrt( (std::pow(A(1),2) + std::pow(A(2),2) - (4 * A(0) * A(3)) ) / (4 * std::pow(A(0),2)) );
+
+        ROS_WARN_STREAM("circle center " << center_x << " " << center_y << " " << R);
+
+        // Now, determine if it's actually a circle or not
+
+        turtlelib::Vector2D P1, P2, P;
+        double P1_P, P_P2, P1_P2, angle_mean, angle_stdev;
+        P1 = clusters.at(j).at(0);
+        P1 = clusters.at(j).at(n-1);
+        arma::colvec angles(n-2); // We'll store all the angles in here
+        P1_P2 = std::sqrt( std::pow( (P1.x - P2.x), 2) + std::pow( (P1.y - P2.y) , 2) );
+
+        for(int point = 1; point < n-1; point++){ // All the other points in the cluster are considered "P".
+            P = clusters.at(j).at(point);
+            P1_P = std::sqrt( std::pow( (P1.x - P.x), 2) + std::pow( (P1.y - P.y) , 2) );
+            P_P2 = std::sqrt( std::pow( (P2.x - P.x), 2) + std::pow( (P2.y - P.y) , 2) );
+
+            double numerator = std::pow(P1_P,2) + std::pow(P_P2,2) - std::pow(P1_P2,2);
+            double denom = 2*(P1_P * P_P2);
+
+            angles(point-1) = std::acos( (numerator/denom) );
+        }
+
+        angles.print("angles?");
+        angle_mean = arma::mean(angles);
+        angle_stdev = arma::stddev(angles);
+        ROS_WARN_STREAM("Angle mean, stdev "<< angle_mean <<" " << angle_stdev);
+
+        if ( (angle_mean < 2.6) && (angle_mean > 1.7) && (angle_stdev < 0.3 )){
+            ROS_ERROR_STREAM("A circle!");
+        }
         
-    }
+    }// end of loop through clusters
 
 }
 
