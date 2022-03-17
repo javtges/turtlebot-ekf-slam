@@ -355,7 +355,7 @@ int sign(auto dy){
     }
 }
 
-void simulateLidar(){
+void simulateLidar(){ //Makes laser scan message
 
     // ROS_ERROR_STREAM("Simulating Lidar");
     laserScan.header.frame_id = "red-base_scan";
@@ -607,7 +607,7 @@ void simulateLidar(){
     }
 }
 
-void timerCallback(const ros::TimerEvent&){
+void timerCallback(const ros::TimerEvent&){ //Publishes path, laser scan, and fake sensor
     ma = simulateObstacles(radii, x_locs, y_locs);
     fake_sensor_pub.publish(ma);
 

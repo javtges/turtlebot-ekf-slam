@@ -16,8 +16,7 @@ namespace nuslam{
             Xi(arma::mat(3+2*n,1)),
             K(arma::mat(3+2*n,3+2*n)),
             H(arma::mat(2,3+2*n)),
-            Sigma(arma::mat(3+2*n,3+2*n)),
-            m(arma::mat(2*n,1)),
+            Sigma(arma::mat(3+2*n,3+2*n)), //get rid of this
             Q(arma::mat(3+2*n,3+2*n)),
             R(arma::mat (2,2, arma::fill::eye)),
             q(arma::mat(3,1)),
@@ -176,10 +175,6 @@ namespace nuslam{
         // double angle = std::atan2( y, x ); // This is phi_j
         // angle = turtlelib::normalize_angle(angle);
 
-
-        m(2*marker_id, 0) = x;
-        m((2*marker_id) + 1 , 0) = y;
-
         Xi((2*marker_id) + 3,0) = x;
         Xi((2*marker_id) + 4,0) = y;
     }
@@ -205,14 +200,15 @@ namespace nuslam{
     arma::mat EKFilter::get_K(){
         return K;
     }
+
+    arma::mat EKFilter::get_R(){
+        return R;
+    }
     arma::colvec EKFilter::get_Xi(){
         return Xi;
     }
     arma::colvec EKFilter::get_q(){
         return q;
-    }
-    arma::colvec EKFilter::get_m(){
-        return m;
     }
     arma::colvec EKFilter::get_zhat(){
         return z_hat;

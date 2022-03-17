@@ -46,11 +46,11 @@ namespace nuslam
 
     arma::mat get_K();
 
+    arma::mat get_R();
+
     arma::colvec get_Xi();
 
     arma::colvec get_q();
-
-    arma::colvec get_m();
 
     arma::colvec get_zhat();
 
@@ -62,7 +62,6 @@ namespace nuslam
         arma::mat K {}; //(9,9); // Kalman gain
         arma::mat H {}; //(2,9); // 
         arma::mat Sigma {}; //(9,9); // covariance matrix
-        arma::mat m {}; //(6); // Marker locations 2nx1
         arma::mat Q {}; //(2,2); // Process noise
         arma::mat R {};        
         arma::mat q {}; //(3); // Turtlebot pose 3x1

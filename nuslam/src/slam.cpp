@@ -66,6 +66,10 @@ static nav_msgs::Path green_path;
 static geometry_msgs::PoseStamped green_pose;
 static arma::mat Xi;
 
+
+static int num_found_markers;
+static double mahob_low = 0.01, mahob_high = 0.8;
+
 /// \brief The callback function for the joint_state subscriber
 /// Calculates the new turtlebot configuration, determines the instanteous twist, and begins populating the odometry message.
 void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
@@ -109,6 +113,75 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
 }
 
+arma::vec find_mahalob(nuslam::EKFilter kalman, double marker_x, double marker_y, int num_found){
+
+
+    ROS_WARN_STREAM("Test\r\n");
+    arma::mat Xi_current = kalman.get_Xi();
+    arma::mat H_current = kalman.get_H();
+    arma::mat Sigma_current = kalman.get_Sigma();
+    arma::mat R = kalman.get_R();
+
+    int num_markers = kalman.get_n();
+    arma::mat psi;
+
+    arma::vec output(num_found, arma::fill::zeros);
+
+    for (int p=0; p<num_found; p++){ //loop through vectors
+
+        arma::mat z_hat = arma::mat(2,1);
+        arma::mat z = arma::mat(2,1);
+        
+        double deltaX = Xi_current((2*p)+3,0) - Xi_current(1,0);
+        double deltaY = Xi_current((2*p)+4,0) - Xi_current(2,0);
+        double d = std::pow(deltaX,2) + std::pow(deltaY,2);
+
+        double rad = std::sqrt( std::pow(deltaX, 2) + std::pow(deltaY, 2) ); //this is r_j
+        double angle = std::atan2( deltaY, deltaX) - Xi(0,0); // This is phi_j
+        angle = turtlelib::normalize_angle(angle);
+
+        z_hat(0,0) = rad;
+        z_hat(1,0) = angle;
+
+        double z_rad = std::sqrt( std::pow(marker_x, 2) + std::pow(marker_y, 2) ); //this is z_j
+        double z_angle = std::atan2( marker_y, marker_x ); // This is phi_j
+        z_angle = turtlelib::normalize_angle(z_angle);
+        
+        z(0,0) = z_rad;
+        z(1,0) = z_angle;
+
+        arma::mat diff(2,1);
+
+        diff = z - z_hat;
+
+        arma::mat H = arma::mat(2,3+2*num_markers);
+
+        H(0,0) = 0;
+        H(0,1) = -deltaX / std::sqrt(d);
+        H(0,2) = -deltaY / std::sqrt(d);
+        H(1,0) = -1;
+        H(1,1) = deltaY / d;
+        H(1,2) = -deltaX / d;
+
+        H(0,2*p+3) = deltaX / std::sqrt(d);
+        H(0,2*p+4) = deltaY / std::sqrt(d);
+        H(1,2*p+3) = -deltaY / d;
+        H(1,2*p+4) = deltaX / d;
+
+        psi = (H * Sigma_current * H.t()) + R;
+
+        arma::mat dk = (diff.t() * arma::inv(psi)) * diff;
+
+        ROS_ERROR_STREAM("marker " << p << ", MAHOB DISTANCE " << dk(0) << "\r\n");
+
+        output(p) = dk(0);
+
+    }
+
+
+    return output;
+}
+
 void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
 
         // IN SUBSCRIBER CALLBACK FOR FAKE_SENSOR:
@@ -133,11 +206,43 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
             kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         }
 
+
+        // Init order: initalize slam with starting config and 0 markers
+
+        // Get global measured_vector
+        // Get the state vector from the SLAM
+        // If prelim_Xi is 0 length:
+        // Add measurement and slam -> increment measured_vector by 1
+        // Else:
+        //     Add it to prelim_Xi
+        //     For each landmark in prelim_Xi:
+        //         Compute H, using the state
+        //         Compute the mahalob distance, add it to a list
+        //     Find the minimum of the distances
+        //     If min < low_thresh, it's an existing marker at that index
+        //         Increment counter, set current_marker index
+        //     If min > high_thresh, it's a new marker
+        //         Add to prelim_Xi, increment counter, set current_marker index
+        //     After incrementing counter, check to see if it's >= 3
+        //     If it is, perform SLAM
+
+
+        // COMPUTING THE MAHALOB DISTANCE
+
+        // First, we find H_k
+        // Requirements: Need deltaX, deltaY, d -> from the msg.markers.pose and Xi state vector
+        // arma::mat Xi_current = kalman.get_Xi();
+
+        arma::vec test = find_mahalob(kalman, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, 3);
+        test.print("test?\r\n");
+
         kalman.Predict(twist); //Tentatively Works
         kalman.UpdateMeasurement(i);
         kalman.ComputeKalmanGains();
         kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         kalman.UpdateCovariance();
+
+        // Set previous state vector
     }
 
     init_flag = 0;    
