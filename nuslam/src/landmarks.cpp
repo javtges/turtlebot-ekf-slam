@@ -27,9 +27,15 @@
 
 static int frequency;
 static double max_range, min_range;
+static visualization_msgs::MarkerArray ma;
+
+static ros::Publisher marker_pub;
 
 void laser_scan_callback(const sensor_msgs::LaserScan & msg){
     ROS_WARN_STREAM("AAA");
+
+    visualization_msgs::MarkerArray maTemp;
+    int n_circles = 0;
 
     int length = msg.ranges.size();
     double threshold = 0.2;
@@ -235,9 +241,44 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
 
             if ( (angle_mean < 2.6) && (angle_mean > 1.7) && (angle_stdev < 0.3 ) && (R > 0.0) && (R < 2.0) ){
                 ROS_ERROR_STREAM("A circle!");
+
+                visualization_msgs::Marker mark;
+                mark.header.frame_id = "green-base_footprint";
+                mark.header.stamp = ros::Time::now();
+                mark.ns = "landmark_node";
+                mark.id = n_circles;
+                mark.type = visualization_msgs::Marker::CYLINDER;
+                mark.action = visualization_msgs::Marker::ADD;
+
+                mark.pose.position.x = center_x;
+                mark.pose.position.y = center_y;
+                mark.pose.position.z = 0.125;
+                mark.pose.orientation.x = 0.0;
+                mark.pose.orientation.y = 0.0;
+                mark.pose.orientation.z = 0.0;
+                mark.pose.orientation.w = 1.0;
+
+                mark.scale.x = R*2;
+                mark.scale.y = R*2;
+                mark.scale.z = 0.25;
+
+                mark.color.r = 0.0;
+                mark.color.g = 1.0;
+                mark.color.b = 1.0;
+                mark.color.a = 1.0;
+                mark.lifetime = ros::Duration(0);
+
+                maTemp.markers.push_back(mark);
+
+                n_circles++;
             }
         }
     }// end of loop through clusters
+
+    ma = maTemp;
+    if (n_circles > 0){
+        marker_pub.publish(ma);
+    }
 
 }
 
@@ -253,6 +294,8 @@ int main(int argc, char * argv[]){
     n.param("min_lidar_range", min_range, 0.120);
 
     ros::Subscriber laser_scan_sub = n.subscribe("/laser_data", 10, laser_scan_callback);
+    marker_pub = n.advertise<visualization_msgs::MarkerArray>("fake_sensor",10);
+
 
     while(ros::ok()){
 
