@@ -133,6 +133,8 @@ namespace nuslam{
 
         Xi = Xi + (K * diff);
 
+        Xi(0,0) = turtlelib::normalize_angle(Xi(0,0));
+
     }
 
     void EKFilter::ComputeKalmanGains(){

@@ -48,7 +48,7 @@ static std::string odom_frame, body_id, wheel_left, wheel_right;
 static double x_0, y_0, theta_0;
 static int frequency;
 static int init_flag = 1;
-static int EKF_SIZE = 10;
+static int EKF_SIZE = 25;
 static turtlelib::Transform2D Tmb, Tob, Tmo, Tob_slam; //Map to Robot, Odom to Robot, Map to Odom
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
@@ -259,7 +259,7 @@ arma::vec find_euc(nuslam::EKFilter, arma::mat Xi, double marker_x, double marke
 
         diff = z - z_hat;
 
-        double dist = std::sqrt( std::pow((mark_map_x - deltaX), 2) + std::pow((mark_map_y - deltaY), 2) );
+        double dist = std::sqrt( std::pow((mark_map_x - Xi((2*p)+3,0)), 2) + std::pow((mark_map_y - Xi((2*p)+4,0)), 2) );
 
         output(p) = dist;
 

@@ -272,8 +272,6 @@ Visualization Manager:
                 {}
               blue-wheel_right_link:
                 {}
-              imu_link:
-                {}
           map:
             odom:
               green-base_footprint:
@@ -288,6 +286,8 @@ Visualization Manager:
                     {}
           red-base_footprint:
             red-base_link:
+              imu_link:
+                {}
               red-base_scan:
                 {}
               red-caster_back_link:
@@ -307,13 +307,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /nusim/obstacles
       Name: Obstacles
       Namespaces:
-        obstacles: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -350,13 +350,13 @@ Visualization Manager:
       Unreliable: false
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /nusim/fake_sensor
       Name: Fake Sensor
       Namespaces:
-        nusim_node: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -387,10 +387,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /slam_obstacles
+      Marker Topic: /fake_sensor
       Name: LiDAR SLAM
       Namespaces:
-        slam_node: true
+        landmark_node: true
       Queue Size: 100
       Value: true
     - Alpha: 1

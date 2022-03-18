@@ -38,7 +38,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
     int n_circles = 0;
 
     int length = msg.ranges.size();
-    double threshold = 0.2;
+    double threshold = 0.05;
     float range = 0.0, prev_range = 0.0;
     std::vector<std::vector<turtlelib::Vector2D>> clusters;
     int n_clusters = 0;
@@ -110,11 +110,11 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
         clusters.pop_back(); // Removes last cluster
         ROS_WARN_STREAM("overlap clusters, " << clusters.at(0).size());
     }
-    ROS_WARN_STREAM(clusters.size());
+    ROS_WARN_STREAM("LOOPING THROUGH CLUSTERS " << clusters.size());
 
     for (int j=0; j<(int)clusters.size(); j++){ // loop through clusters
         int n = clusters.at(j).size();
-        if (n > 3){    // We need at least 4 points to say it's a circle or not (and also to not crash the program)
+        if (n > 4){    // We need at least 4 points to say it's a circle or not (and also to not crash the program)
             double x_bar = 0.0, y_bar = 0.0, x_sum = 0.0, y_sum = 0.0, z_sum = 0.0, z_bar = 0.0;
             double center_x, center_y, R;
             arma::mat Z(n, 4);
@@ -151,9 +151,9 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
             H_inv(3,0) = 0.5;
             H_inv(3,3) = -2*z_bar;
 
-            H_inv.print("H_inv");
-            H.print("H");
-            Z.print("Z");
+            // H_inv.print("H_inv");
+            // H.print("H");
+            // Z.print("Z");
 
             // SINGULAR VALUE DECOMPOSITION -----------------------
 
@@ -165,9 +165,9 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
 
             arma::svd(U, sig_vec, V, Z);
 
-            U.print("U");
-            sig_vec.print("sigma");
-            V.print("V");
+            // U.print("U");
+            // sig_vec.print("sigma");
+            // V.print("V");
             arma::mat Sigma = arma::diagmat(sig_vec);
 
             double min_sigma = sig_vec.min();
@@ -179,16 +179,16 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
                 arma::mat Y = V * Sigma * V.t();
                 arma::mat Q = Y * arma::inv(H) * Y;
 
-                Y.print("Y");
-                Q.print("Q");
+                // Y.print("Y");
+                // Q.print("Q");
 
                 arma::mat eigenvectors;
                 arma::colvec eigenvalues;
 
                 arma::eig_sym(eigenvalues, eigenvectors, Q);
 
-                eigenvalues.print("eigenvalues");
-                eigenvectors.print("eigenvectors");
+                // eigenvalues.print("eigenvalues");
+                // eigenvectors.print("eigenvectors");
 
                 double smallest_positive = 0.0;
 
@@ -207,7 +207,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
 
             // Find location of the center and the radius of the circle
 
-            A.print("A");
+            // A.print("A");
             center_x = (-A(1) / (2*A(0))) + x_bar;
             center_y = (-A(2) / (2*A(0))) + y_bar;
             R = std::sqrt( (std::pow(A(1),2) + std::pow(A(2),2) - (4 * A(0) * A(3)) ) / (4 * std::pow(A(0),2)) );
@@ -234,19 +234,19 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
                 angles(point-1) = std::acos( (numerator/denom) );
             }
 
-            angles.print("angles?");
+            // angles.print("angles?");
             angle_mean = arma::mean(angles);
             angle_stdev = arma::stddev(angles);
             ROS_WARN_STREAM("Angle mean, stdev "<< angle_mean <<" " << angle_stdev);
 
-            if ( (angle_mean < 2.6) && (angle_mean > 1.7) && (angle_stdev < 0.3 ) && (R > 0.0) && (R < 2.0) ){
-                ROS_ERROR_STREAM("A circle!");
+            if ( (angle_mean < 2.4) && (angle_mean > 1.6) && (angle_stdev < 0.35 ) && (R > 0.02) && (R < 2.0) ){
+                ROS_ERROR_STREAM("A circle! " << j);
 
                 visualization_msgs::Marker mark;
                 mark.header.frame_id = "green-base_footprint";
                 mark.header.stamp = ros::Time::now();
                 mark.ns = "landmark_node";
-                mark.id = n_circles;
+                mark.id = j;
                 mark.type = visualization_msgs::Marker::CYLINDER;
                 mark.action = visualization_msgs::Marker::ADD;
 
@@ -262,9 +262,9 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
                 mark.scale.y = R*2;
                 mark.scale.z = 0.25;
 
-                mark.color.r = 0.0;
+                mark.color.r = 1.0;
                 mark.color.g = 1.0;
-                mark.color.b = 1.0;
+                mark.color.b = 0.0;
                 mark.color.a = 1.0;
                 mark.lifetime = ros::Duration(0);
 
@@ -276,6 +276,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
     }// end of loop through clusters
 
     ma = maTemp;
+    ROS_WARN_STREAM("publishing circles qty " << n_circles);
     if (n_circles > 0){
         marker_pub.publish(ma);
     }
