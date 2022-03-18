@@ -8,7 +8,6 @@ Panels:
         - /Status1
         - /RobotModel1
         - /RobotModel2
-        - /RobotModel3
         - /TF1/Frames1
         - /Walls1/Namespaces1
         - /Odometry1/Shape1
@@ -32,7 +31,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -58,55 +57,6 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 1
-      Class: rviz/RobotModel
-      Collision Enabled: false
-      Enabled: true
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Link Tree Style: Links in Alphabetic Order
-        imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        red-base_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        red-base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        red-base_scan:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        red-caster_back_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        red-wheel_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        red-wheel_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-      Name: RobotModel
-      Robot Description: red/robot_description
-      TF Prefix: ""
-      Update Interval: 0
-      Value: true
-      Visual Enabled: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -240,18 +190,6 @@ Visualization Manager:
           Value: true
         odom:
           Value: true
-        red-base_footprint:
-          Value: true
-        red-base_link:
-          Value: false
-        red-base_scan:
-          Value: false
-        red-caster_back_link:
-          Value: false
-        red-wheel_left_link:
-          Value: false
-        red-wheel_right_link:
-          Value: false
         world:
           Value: true
       Marker Alpha: 1
@@ -262,18 +200,18 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          blue-base_footprint:
-            blue-base_link:
-              blue-base_scan:
-                {}
-              blue-caster_back_link:
-                {}
-              blue-wheel_left_link:
-                {}
-              blue-wheel_right_link:
-                {}
           map:
             odom:
+              blue-base_footprint:
+                blue-base_link:
+                  blue-base_scan:
+                    {}
+                  blue-caster_back_link:
+                    {}
+                  blue-wheel_left_link:
+                    {}
+                  blue-wheel_right_link:
+                    {}
               green-base_footprint:
                 green-base_link:
                   green-base_scan:
@@ -286,26 +224,16 @@ Visualization Manager:
                     {}
                   imu_link:
                     {}
-          red-base_footprint:
-            red-base_link:
-              red-base_scan:
-                {}
-              red-caster_back_link:
-                {}
-              red-wheel_left_link:
-                {}
-              red-wheel_right_link:
-                {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /nusim/walls
       Name: Walls
       Namespaces:
-        walls: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /nusim/obstacles
@@ -493,7 +421,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.063830852508545
+      Distance: 4.182487964630127
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -530,4 +458,4 @@ Window Geometry:
     collapsed: true
   Width: 1200
   X: 275
-  Y: 0
+  Y: 27

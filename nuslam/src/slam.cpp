@@ -238,6 +238,7 @@ arma::vec find_euc(nuslam::EKFilter, arma::mat Xi, double marker_x, double marke
         z_hat(0,0) = rad;
         z_hat(1,0) = angle;
 
+// -------------------------------------
         double z_rad = std::sqrt( std::pow(marker_x, 2) + std::pow(marker_y, 2) ); //this is z_j
         double z_angle = std::atan2( marker_y, marker_x ); // This is phi_j
         z_angle = turtlelib::normalize_angle(z_angle);
@@ -245,7 +246,7 @@ arma::vec find_euc(nuslam::EKFilter, arma::mat Xi, double marker_x, double marke
         double mark_map_x, mark_map_y;
         mark_map_x = Xi(1,0) + z_rad * (std::cos(z_angle + Xi(0,0)));
         mark_map_y = Xi(2,0) + z_rad * (std::sin(z_angle + Xi(0,0)));
-
+//----------------------------------------
 
         // deltaX = Xi(1,0) + (rad * std::cos(angle));
         // deltaY = Xi(2,0) + (rad * std::sin(angle));
