@@ -118,7 +118,7 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
 arma::vec find_mahalob(nuslam::EKFilter kalman, arma::mat prelim_Xi, turtlelib::Twist2D twist, double marker_x, double marker_y, int num_found){
 
-    ROS_WARN_STREAM("Test\r\n");
+    // ROS_WARN_STREAM("Test\r\n");
     // arma::mat Xi_current = kalman.get_Xi();
     arma::mat Xi_current = prelim_Xi;
     // Xi_current.print("prelim xi");
@@ -208,7 +208,7 @@ arma::vec find_mahalob(nuslam::EKFilter kalman, arma::mat prelim_Xi, turtlelib::
 
         arma::mat dk = (diff.t() * arma::inv(psi)) * diff;
 
-        ROS_ERROR_STREAM("marker " << p << " " << marker_x << " " << marker_y << " " << ", MAHOB DISTANCE " << dk(0) << "\r\n");
+        // ROS_ERROR_STREAM("marker " << p << " " << marker_x << " " << marker_y << " " << ", MAHOB DISTANCE " << dk(0) << "\r\n");
 
         output(p) = dk(0);
 
@@ -250,7 +250,7 @@ arma::vec find_euc(nuslam::EKFilter, arma::mat Xi, double marker_x, double marke
         // deltaX = Xi(1,0) + (rad * std::cos(angle));
         // deltaY = Xi(2,0) + (rad * std::sin(angle));
 
-        ROS_ERROR_STREAM("zhat " << deltaX << " " << deltaY << " " << "z " << mark_map_x << " " << mark_map_y << "\r\n");
+        // ROS_ERROR_STREAM("zhat " << deltaX << " " << deltaY << " " << "z " << mark_map_x << " " << mark_map_y << "\r\n");
         
         z(0,0) = z_rad;
         z(1,0) = z_angle;
@@ -263,7 +263,7 @@ arma::vec find_euc(nuslam::EKFilter, arma::mat Xi, double marker_x, double marke
 
         output(p) = dist;
 
-        ROS_ERROR_STREAM("marker " << p << " " << mark_map_x << " " << mark_map_y << " " << ", EUC DISTANCE " << dist << "\r\n");
+        // ROS_ERROR_STREAM("marker " << p << " " << mark_map_x << " " << mark_map_y << " " << ", EUC DISTANCE " << dist << "\r\n");
 
 
     }
@@ -291,104 +291,46 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
     int marker_index = 0;
     arma::mat test_sig = kalman.get_Sigma();
 
-    // test_sig.print("test sigma");
-
     for (int i=0; i<num_markers; i++){
-
-        ROS_ERROR_STREAM("MARKER " << i);
-
-        // First, add to the prelim_Xi array
-        // if (n_prelim == 0){
-        //     prelim_Xi( (n_prelim *2 + 3), 0 ) = msg.markers[i].pose.position.x;
-        //     prelim_Xi( (n_prelim *2 + 4), 0 ) = msg.markers[i].pose.position.y;
-        //     prelim_Xi.print("init first landmark");
-        //     n_prelim++;
-        //     continue;
-        // } 
         
         if (n_confirm == 0){
             kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
-            ROS_ERROR_STREAM("adding a new landmark at index " << n_confirm << " " << msg.markers[i].pose.position.x << " " << msg.markers[i].pose.position.y << "\r\n");
             n_confirm++;
             continue;
         }
 
         // Find all of the mah_distances, using the preliminary Xi matrix
         
-        // arma::vec mah_distances = find_mahalob(kalman, kalman.get_Xi(), twist, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, n_confirm);
         arma::vec euc_distances = find_euc(kalman, kalman.get_Xi(), msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, n_confirm);
 
         int argmin_distances = euc_distances.index_min(); // The index of the closest marker
-        ROS_WARN_STREAM("min arg " << argmin_distances << "\r\n");
 
         double min_distance = euc_distances.at(argmin_distances); // The distance of the closest marker
 
-        // double dist_to_measurement = std::sqrt( std::pow( msg.markers[i].pose.position.x ,2) + std::pow( msg.markers[i].pose.position.y ,2) );
         // ----------------------------------------------------
 
         if( min_distance < mah_low ){ // If distance is lower than the threshold, it's already in prelim_Xi
             
-            // if ( iterations(argmin_distances) >= 3 ){ // If it's been verified to be a landmark
-            //     // Now we SLAM
-            //     if ( iterations(argmin_distances) == 3 ){
-                    
-            //         kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
-            //         n_confirm++; // Increment the confirmed count
-            //         ROS_WARN_STREAM("new landmark! " << n_confirm);
-            //     }
-            // ROS_WARN_STREAM("twist"<<twist);
-            // kalman.Predict(twist);
-            // kalman.UpdateMeasurement(argmin_distances); // Update the measurement of the index of the closest marker
-            // kalman.ComputeKalmanGains();
-            // kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
-            // kalman.UpdateCovariance();
-            // kalman.get_Xi().print("test");
-            // iterations(argmin_distances) += 1;
-            // }
-            // else{ // If it hasn't reached the right amount of iterations yet
-            //     iterations(argmin_distances) += 1;
-
-            // }
             marker_index = argmin_distances;
         }
         else if ( min_distance > mah_high ){ // If it's higher than the threshold, it's a NEW landmark
-            // Set the Xi state vector to include the new potential landmark
-            // prelim_Xi( (n_prelim *2 + 3), 0 ) = msg.markers[i].pose.position.x;
-            // prelim_Xi( (n_prelim *2 + 4), 0 ) = msg.markers[i].pose.position.y;
-
-            // prelim_Xi( (n_prelim *2 + 3), 0 ) = msg.markers[i].pose.position.x;
-            // prelim_Xi( (n_prelim *2 + 4), 0 ) = msg.markers[i].pose.position.y;
-            // iterations(argmin_distances) += 1; //Make sure to increment
-            // n_prelim++;
-            kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
-            ROS_ERROR_STREAM("adding a new landmark at index" << n_confirm << "\r\n");
-            marker_index = n_confirm;
-            n_confirm++;
             
+            // Set the Xi state vector to include the new potential landmark
+            kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+            marker_index = n_confirm;
+            n_confirm++; 
 
         }
         else{ // If the min_distance is between the two thresholds, throw it out
             continue;
         }
 
-        ROS_WARN_STREAM("twist"<<twist);
         kalman.Predict(twist);
-
-        kalman.get_Xi().print("THE XI MATRIX!!!!");
-        ROS_ERROR_STREAM("THE VALUE " << marker_index << "\r\n");
-
         kalman.UpdateMeasurement(marker_index); // Update the measurement of the index of the closest marker
         kalman.ComputeKalmanGains();
         kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         kalman.UpdateCovariance();
-        kalman.get_Xi().print("test");
         iterations(argmin_distances) += 1;
-
-        // End of Else statement (if there's more than 1 landmark) - update prelim Xi state vector
-        // arma::mat Xi_u = kalman.get_Xi();
-        // prelim_Xi(0,0) = Xi_u(0,0);
-        // prelim_Xi(1,0) = Xi_u(1,0);
-        // prelim_Xi(2,0) = Xi_u(2,0);
 
     }
 

@@ -32,7 +32,7 @@ static visualization_msgs::MarkerArray ma;
 static ros::Publisher marker_pub;
 
 void laser_scan_callback(const sensor_msgs::LaserScan & msg){
-    ROS_WARN_STREAM("AAA");
+    // ROS_WARN_STREAM("AAA");
 
     visualization_msgs::MarkerArray maTemp;
     int n_circles = 0;
@@ -72,7 +72,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
         double dist_diff = std::abs(range - prev_range);
         // ROS_ERROR_STREAM(min_range << " " << max_range);
         if ((min_range < range) && (range < max_range)){
-            ROS_WARN_STREAM(i << " " << range << " " << mx << " " << my);
+            // ROS_WARN_STREAM(i << " " << range << " " << mx << " " << my);
             
             if(n_clusters == 0){  // First cluster
                     std::vector<turtlelib::Vector2D> new_cluster;
@@ -89,7 +89,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
                     std::vector<turtlelib::Vector2D> new_cluster;
                     new_cluster.push_back ({mx, my});
                     clusters.push_back (new_cluster);
-                    ROS_ERROR_STREAM("new cluster!");
+                    // ROS_ERROR_STREAM("new cluster!");
                     n_clusters++;
                 }
             }
@@ -108,9 +108,9 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
     if (std::abs(first_distance - range) < threshold){
         clusters.at(0).insert( clusters.at(0).end(), clusters.at(n_clusters-1).begin(), clusters.at(n_clusters-1).end() );
         clusters.pop_back(); // Removes last cluster
-        ROS_WARN_STREAM("overlap clusters, " << clusters.at(0).size());
+        // ROS_WARN_STREAM("overlap clusters, " << clusters.at(0).size());
     }
-    ROS_WARN_STREAM("LOOPING THROUGH CLUSTERS " << clusters.size());
+    // ROS_WARN_STREAM("LOOPING THROUGH CLUSTERS " << clusters.size());
 
     for (int j=0; j<(int)clusters.size(); j++){ // loop through clusters
         int n = clusters.at(j).size();
@@ -196,7 +196,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
                     if(eigenvalues(val) > 0 ){
                         smallest_positive = eigenvalues(val);
                         A_star = eigenvectors.col(val);
-                        ROS_WARN_STREAM("smallest positive " << smallest_positive);
+                        // ROS_WARN_STREAM("smallest positive " << smallest_positive);
                         break;
                     }
                 }
@@ -212,7 +212,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
             center_y = (-A(2) / (2*A(0))) + y_bar;
             R = std::sqrt( (std::pow(A(1),2) + std::pow(A(2),2) - (4 * A(0) * A(3)) ) / (4 * std::pow(A(0),2)) );
 
-            ROS_WARN_STREAM("circle center " << center_x << " " << center_y << " " << R);
+            // ROS_WARN_STREAM("circle center " << center_x << " " << center_y << " " << R);
 
             // Now, determine if it's actually a circle or not
 
@@ -237,10 +237,10 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
             // angles.print("angles?");
             angle_mean = arma::mean(angles);
             angle_stdev = arma::stddev(angles);
-            ROS_WARN_STREAM("Angle mean, stdev "<< angle_mean <<" " << angle_stdev);
+            // ROS_WARN_STREAM("Angle mean, stdev "<< angle_mean <<" " << angle_stdev);
 
             if ( (angle_mean < 2.4) && (angle_mean > 1.6) && (angle_stdev < 0.35 ) && (R > 0.02) && (R < 2.0) ){
-                ROS_ERROR_STREAM("A circle! " << j);
+                // ROS_ERROR_STREAM("A circle! " << j);
 
                 visualization_msgs::Marker mark;
                 mark.header.frame_id = "green-base_footprint";
@@ -276,7 +276,7 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
     }// end of loop through clusters
 
     ma = maTemp;
-    ROS_WARN_STREAM("publishing circles qty " << n_circles);
+    // ROS_WARN_STREAM("publishing circles qty " << n_circles);
     if (n_circles > 0){
         marker_pub.publish(ma);
     }
