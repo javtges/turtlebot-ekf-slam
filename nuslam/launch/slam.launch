@@ -69,7 +69,7 @@
         <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuturtle_control)/config/start_robot_blue.rviz" if="$(eval arg('robot') != 'nusim')"/>
     </group>
 
-    <node pkg="nuslam" type="slam_node" name="slam_node"/>
+    <node pkg="nuslam" type="slam_node" name="slam_node" output="screen"/>
 
 
 

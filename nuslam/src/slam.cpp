@@ -48,6 +48,7 @@ static std::string odom_frame, body_id, wheel_left, wheel_right;
 static double x_0, y_0, theta_0;
 static int frequency;
 static int init_flag = 1;
+static int EKF_SIZE = 10;
 static turtlelib::Transform2D Tmb, Tob, Tmo, Tob_slam; //Map to Robot, Odom to Robot, Map to Odom
 static turtlelib::DiffDrive drive;
 static turtlelib::Q turtle_config;
@@ -58,7 +59,7 @@ static sensor_msgs::JointState joint_states;
 static nav_msgs::Odometry odom;
 static std::vector<double> positions, velocities, radii, x_locs, y_locs;
 static std::vector<turtlelib::Vector2D> markers_in_map(3);
-static nuslam::EKFilter kalman(3);
+static nuslam::EKFilter kalman(EKF_SIZE);
 static visualization_msgs::MarkerArray markers;
 static long int counter=0;
 static ros::Publisher odom_pub, marker_pub, path_pub;
@@ -67,8 +68,10 @@ static geometry_msgs::PoseStamped green_pose;
 static arma::mat Xi;
 
 
-static int num_found_markers;
-static double mahob_low = 0.01, mahob_high = 0.8;
+static int n_confirm = 0, n_prelim = 0;
+static double mah_low = 0.1, mah_high = 0.5;
+static arma::vec iterations(EKF_SIZE);
+static arma::mat prelim_Xi = arma::mat(3 + (2*EKF_SIZE), 1, arma::fill::zeros);
 
 /// \brief The callback function for the joint_state subscriber
 /// Calculates the new turtlebot configuration, determines the instanteous twist, and begins populating the odometry message.
@@ -113,21 +116,24 @@ void joint_state_callback(const sensor_msgs::JointState::ConstPtr& msg){
 
 }
 
-arma::vec find_mahalob(nuslam::EKFilter kalman, double marker_x, double marker_y, int num_found){
-
+arma::vec find_mahalob(nuslam::EKFilter kalman, arma::mat prelim_Xi, turtlelib::Twist2D twist, double marker_x, double marker_y, int num_found){
 
     ROS_WARN_STREAM("Test\r\n");
-    arma::mat Xi_current = kalman.get_Xi();
-    arma::mat H_current = kalman.get_H();
+    // arma::mat Xi_current = kalman.get_Xi();
+    arma::mat Xi_current = prelim_Xi;
+    // Xi_current.print("prelim xi");
+    std::cout << Xi_current << "\r\n";
+    // arma::mat H_current = kalman.get_H();
     arma::mat Sigma_current = kalman.get_Sigma();
     arma::mat R = kalman.get_R();
+    arma::mat Q = kalman.get_Q();
 
     int num_markers = kalman.get_n();
     arma::mat psi;
 
     arma::vec output(num_found, arma::fill::zeros);
 
-    for (int p=0; p<num_found; p++){ //loop through vectors
+    for (int p=0; p<num_found; p++){ //loop through the number of preliminary markers we have
 
         arma::mat z_hat = arma::mat(2,1);
         arma::mat z = arma::mat(2,1);
@@ -137,7 +143,7 @@ arma::vec find_mahalob(nuslam::EKFilter kalman, double marker_x, double marker_y
         double d = std::pow(deltaX,2) + std::pow(deltaY,2);
 
         double rad = std::sqrt( std::pow(deltaX, 2) + std::pow(deltaY, 2) ); //this is r_j
-        double angle = std::atan2( deltaY, deltaX) - Xi(0,0); // This is phi_j
+        double angle = std::atan2( deltaY, deltaX) - Xi_current(0,0); // This is phi_j
         angle = turtlelib::normalize_angle(angle);
 
         z_hat(0,0) = rad;
@@ -154,7 +160,7 @@ arma::vec find_mahalob(nuslam::EKFilter kalman, double marker_x, double marker_y
 
         diff = z - z_hat;
 
-        arma::mat H = arma::mat(2,3+2*num_markers);
+        arma::mat H = arma::mat(2,3+2*num_markers, arma::fill::zeros);
 
         H(0,0) = 0;
         H(0,1) = -deltaX / std::sqrt(d);
@@ -168,19 +174,103 @@ arma::vec find_mahalob(nuslam::EKFilter kalman, double marker_x, double marker_y
         H(1,2*p+3) = -deltaY / d;
         H(1,2*p+4) = deltaX / d;
 
+        // H.print("H matrix");
+
+        arma::mat At_eye = arma::eye(3+2*num_markers, 3+2*num_markers);
+        arma::mat At = arma::mat(3+2*num_markers, 3+2*num_markers, arma::fill::zeros);
+        arma::mat A = arma::mat(3+2*num_markers, 3+2*num_markers, arma::fill::zeros);
+        arma::mat K = arma::mat(3+2*num_markers, 3+2*num_markers, arma::fill::zeros);
+
+        if(turtlelib::almost_equal(twist.thetadot, 0.0)){
+            // If almost zero rotation:
+            At(1,0) = -1*(twist.xdot) * std::sin(Xi_current(0,0));
+            At(2,0) = (twist.xdot) * std::cos(Xi_current(0,0));
+        }
+
+        else{
+            // Xi(0,0) += twist.thetadot;
+            At(1,0) = ((-twist.xdot / twist.thetadot) * std::cos(Xi_current(0,0))) + ((twist.xdot / twist.thetadot) * std::cos( turtlelib::normalize_angle(Xi_current(0,0) + (twist.thetadot)) ));
+            At(2,0) = ((-twist.xdot / twist.thetadot) * std::sin(Xi_current(0,0))) + ((twist.xdot / twist.thetadot) * std::sin( turtlelib::normalize_angle(Xi_current(0,0) + (twist.thetadot)) ));
+        
+        }
+
+        A = At_eye + At;
+        Sigma_current = (A * Sigma_current * A.t()) + Q;
+        // Sigma_current.print("Calculated Sigma with A");
+        K = (Sigma_current * H.t()) * arma::inv((H * Sigma_current * H.t()) + R);
+        
+        arma::mat KH = K*H;
+        arma::mat I = arma::eye(arma::size(KH));
+        Sigma_current = (I - KH) * Sigma_current;
+
+
         psi = (H * Sigma_current * H.t()) + R;
 
         arma::mat dk = (diff.t() * arma::inv(psi)) * diff;
 
-        ROS_ERROR_STREAM("marker " << p << ", MAHOB DISTANCE " << dk(0) << "\r\n");
+        ROS_ERROR_STREAM("marker " << p << " " << marker_x << " " << marker_y << " " << ", MAHOB DISTANCE " << dk(0) << "\r\n");
 
         output(p) = dk(0);
 
     }
 
+    return output;
+}
+
+arma::vec find_euc(nuslam::EKFilter, arma::mat Xi, double marker_x, double marker_y, int num_found){
+
+    arma::vec output(num_found, arma::fill::zeros);
+
+
+    for (int p=0; p<num_found; p++){
+
+        arma::mat z_hat = arma::mat(2,1);
+        arma::mat z = arma::mat(2,1);
+        
+        double deltaX = Xi((2*p)+3,0) - Xi(1,0);
+        double deltaY = Xi((2*p)+4,0) - Xi(2,0);
+        double d = std::pow(deltaX,2) + std::pow(deltaY,2);
+
+        double rad = std::sqrt( std::pow(deltaX, 2) + std::pow(deltaY, 2) ); //this is r_j
+        double angle = std::atan2( deltaY, deltaX) - Xi(0,0); // This is phi_j
+        angle = turtlelib::normalize_angle(angle);
+
+        z_hat(0,0) = rad;
+        z_hat(1,0) = angle;
+
+        double z_rad = std::sqrt( std::pow(marker_x, 2) + std::pow(marker_y, 2) ); //this is z_j
+        double z_angle = std::atan2( marker_y, marker_x ); // This is phi_j
+        z_angle = turtlelib::normalize_angle(z_angle);
+
+        double mark_map_x, mark_map_y;
+        mark_map_x = Xi(1,0) + z_rad * (std::cos(z_angle + Xi(0,0)));
+        mark_map_y = Xi(2,0) + z_rad * (std::sin(z_angle + Xi(0,0)));
+
+
+        // deltaX = Xi(1,0) + (rad * std::cos(angle));
+        // deltaY = Xi(2,0) + (rad * std::sin(angle));
+
+        ROS_ERROR_STREAM("zhat " << deltaX << " " << deltaY << " " << "z " << mark_map_x << " " << mark_map_y << "\r\n");
+        
+        z(0,0) = z_rad;
+        z(1,0) = z_angle;
+
+        arma::mat diff(2,1);
+
+        diff = z - z_hat;
+
+        double dist = std::sqrt( std::pow((mark_map_x - deltaX), 2) + std::pow((mark_map_y - deltaY), 2) );
+
+        output(p) = dist;
+
+        ROS_ERROR_STREAM("marker " << p << " " << mark_map_x << " " << mark_map_y << " " << ", EUC DISTANCE " << dist << "\r\n");
+
+
+    }
 
     return output;
 }
+
 
 void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
 
@@ -198,51 +288,108 @@ void fake_sensor_callback(const visualization_msgs::MarkerArray & msg){
             // kalman.UpdateCovariance()
             // Use Xi to determine green robot's location
     int num_markers = msg.markers.size();
+    int marker_index = 0;
+    arma::mat test_sig = kalman.get_Sigma();
+
+    // test_sig.print("test sigma");
 
     for (int i=0; i<num_markers; i++){
-        // PUT MARKER IN THE MAP FRAME!
 
-        if (init_flag){
-            kalman.init_landmarks(msg.markers[i].id, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+        ROS_ERROR_STREAM("MARKER " << i);
+
+        // First, add to the prelim_Xi array
+        // if (n_prelim == 0){
+        //     prelim_Xi( (n_prelim *2 + 3), 0 ) = msg.markers[i].pose.position.x;
+        //     prelim_Xi( (n_prelim *2 + 4), 0 ) = msg.markers[i].pose.position.y;
+        //     prelim_Xi.print("init first landmark");
+        //     n_prelim++;
+        //     continue;
+        // } 
+        
+        if (n_confirm == 0){
+            kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+            ROS_ERROR_STREAM("adding a new landmark at index " << n_confirm << " " << msg.markers[i].pose.position.x << " " << msg.markers[i].pose.position.y << "\r\n");
+            n_confirm++;
+            continue;
         }
 
+        // Find all of the mah_distances, using the preliminary Xi matrix
+        
+        // arma::vec mah_distances = find_mahalob(kalman, kalman.get_Xi(), twist, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, n_confirm);
+        arma::vec euc_distances = find_euc(kalman, kalman.get_Xi(), msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, n_confirm);
 
-        // Init order: initalize slam with starting config and 0 markers
+        int argmin_distances = euc_distances.index_min(); // The index of the closest marker
+        ROS_WARN_STREAM("min arg " << argmin_distances << "\r\n");
 
-        // Get global measured_vector
-        // Get the state vector from the SLAM
-        // If prelim_Xi is 0 length:
-        // Add measurement and slam -> increment measured_vector by 1
-        // Else:
-        //     Add it to prelim_Xi
-        //     For each landmark in prelim_Xi:
-        //         Compute H, using the state
-        //         Compute the mahalob distance, add it to a list
-        //     Find the minimum of the distances
-        //     If min < low_thresh, it's an existing marker at that index
-        //         Increment counter, set current_marker index
-        //     If min > high_thresh, it's a new marker
-        //         Add to prelim_Xi, increment counter, set current_marker index
-        //     After incrementing counter, check to see if it's >= 3
-        //     If it is, perform SLAM
+        double min_distance = euc_distances.at(argmin_distances); // The distance of the closest marker
 
+        // double dist_to_measurement = std::sqrt( std::pow( msg.markers[i].pose.position.x ,2) + std::pow( msg.markers[i].pose.position.y ,2) );
+        // ----------------------------------------------------
 
-        // COMPUTING THE MAHALOB DISTANCE
+        if( min_distance < mah_low ){ // If distance is lower than the threshold, it's already in prelim_Xi
+            
+            // if ( iterations(argmin_distances) >= 3 ){ // If it's been verified to be a landmark
+            //     // Now we SLAM
+            //     if ( iterations(argmin_distances) == 3 ){
+                    
+            //         kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+            //         n_confirm++; // Increment the confirmed count
+            //         ROS_WARN_STREAM("new landmark! " << n_confirm);
+            //     }
+            // ROS_WARN_STREAM("twist"<<twist);
+            // kalman.Predict(twist);
+            // kalman.UpdateMeasurement(argmin_distances); // Update the measurement of the index of the closest marker
+            // kalman.ComputeKalmanGains();
+            // kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+            // kalman.UpdateCovariance();
+            // kalman.get_Xi().print("test");
+            // iterations(argmin_distances) += 1;
+            // }
+            // else{ // If it hasn't reached the right amount of iterations yet
+            //     iterations(argmin_distances) += 1;
 
-        // First, we find H_k
-        // Requirements: Need deltaX, deltaY, d -> from the msg.markers.pose and Xi state vector
-        // arma::mat Xi_current = kalman.get_Xi();
+            // }
+            marker_index = argmin_distances;
+        }
+        else if ( min_distance > mah_high ){ // If it's higher than the threshold, it's a NEW landmark
+            // Set the Xi state vector to include the new potential landmark
+            // prelim_Xi( (n_prelim *2 + 3), 0 ) = msg.markers[i].pose.position.x;
+            // prelim_Xi( (n_prelim *2 + 4), 0 ) = msg.markers[i].pose.position.y;
 
-        arma::vec test = find_mahalob(kalman, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, 3);
-        test.print("test?\r\n");
+            // prelim_Xi( (n_prelim *2 + 3), 0 ) = msg.markers[i].pose.position.x;
+            // prelim_Xi( (n_prelim *2 + 4), 0 ) = msg.markers[i].pose.position.y;
+            // iterations(argmin_distances) += 1; //Make sure to increment
+            // n_prelim++;
+            kalman.init_landmarks(n_confirm, msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
+            ROS_ERROR_STREAM("adding a new landmark at index" << n_confirm << "\r\n");
+            marker_index = n_confirm;
+            n_confirm++;
+            
 
-        kalman.Predict(twist); //Tentatively Works
-        kalman.UpdateMeasurement(i);
+        }
+        else{ // If the min_distance is between the two thresholds, throw it out
+            continue;
+        }
+
+        ROS_WARN_STREAM("twist"<<twist);
+        kalman.Predict(twist);
+
+        kalman.get_Xi().print("THE XI MATRIX!!!!");
+        ROS_ERROR_STREAM("THE VALUE " << marker_index << "\r\n");
+
+        kalman.UpdateMeasurement(marker_index); // Update the measurement of the index of the closest marker
         kalman.ComputeKalmanGains();
         kalman.UpdatePosState(msg.markers[i].pose.position.x, msg.markers[i].pose.position.y);
         kalman.UpdateCovariance();
+        kalman.get_Xi().print("test");
+        iterations(argmin_distances) += 1;
 
-        // Set previous state vector
+        // End of Else statement (if there's more than 1 landmark) - update prelim Xi state vector
+        // arma::mat Xi_u = kalman.get_Xi();
+        // prelim_Xi(0,0) = Xi_u(0,0);
+        // prelim_Xi(1,0) = Xi_u(1,0);
+        // prelim_Xi(2,0) = Xi_u(2,0);
+
     }
 
     init_flag = 0;    
@@ -353,7 +500,7 @@ int main(int argc, char * argv[])
     /// Setting up the looping rate and the required subscribers.
     
     ros::Subscriber joint_state_sub = n.subscribe("/red/joint_states",10, joint_state_callback);
-    ros::Subscriber fake_sensor_sub = n.subscribe("/nusim/fake_sensor", 10, fake_sensor_callback);
+    ros::Subscriber fake_sensor_sub = n.subscribe("/fake_sensor", 10, fake_sensor_callback);
     odom_pub = n.advertise<nav_msgs::Odometry>("odom",100);
     marker_pub = n.advertise<visualization_msgs::MarkerArray>("slam_obstacles",10);
     ros::Timer timer = n.createTimer(ros::Duration(0.2), timerCallback);
@@ -367,6 +514,10 @@ int main(int argc, char * argv[])
     Tmb = turtlelib::Transform2D({initial_config.x, initial_config.y}, initial_config.theta); //Perhaps this should be set to (0,0)...
     kalman.EKFilter_init(initial_config);
     kalman.init_Q_R(1, 0.0002);
+
+    prelim_Xi(0,0) = initial_config.theta;
+    prelim_Xi(1,0) = initial_config.x;
+    prelim_Xi(2,0) = initial_config.y;
 
     tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped_ob;

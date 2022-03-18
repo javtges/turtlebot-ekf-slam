@@ -10,7 +10,7 @@ Panels:
         - /RobotModel2
         - /RobotModel3
         - /TF1/Frames1
-        - /MarkerArray1/Namespaces1
+        - /Walls1/Namespaces1
         - /Odometry1/Shape1
       Splitter Ratio: 0.46176469326019287
     Tree Height: 555
@@ -272,6 +272,8 @@ Visualization Manager:
                 {}
               blue-wheel_right_link:
                 {}
+              imu_link:
+                {}
           map:
             odom:
               green-base_footprint:
@@ -283,8 +285,6 @@ Visualization Manager:
                   green-wheel_left_link:
                     {}
                   green-wheel_right_link:
-                    {}
-                  imu_link:
                     {}
           red-base_footprint:
             red-base_link:
@@ -301,7 +301,7 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /nusim/walls
-      Name: MarkerArray
+      Name: Walls
       Namespaces:
         walls: true
       Queue Size: 100
@@ -309,7 +309,7 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /nusim/obstacles
-      Name: MarkerArray
+      Name: Obstacles
       Namespaces:
         obstacles: true
       Queue Size: 100
@@ -352,7 +352,7 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /nusim/fake_sensor
-      Name: MarkerArray
+      Name: Fake Sensor
       Namespaces:
         nusim_node: true
       Queue Size: 100
@@ -388,7 +388,7 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /slam_obstacles
-      Name: MarkerArray
+      Name: LiDAR SLAM
       Namespaces:
         slam_node: true
       Queue Size: 100

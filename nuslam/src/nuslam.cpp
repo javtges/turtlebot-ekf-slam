@@ -17,12 +17,25 @@ namespace nuslam{
             K(arma::mat(3+2*n,3+2*n)),
             H(arma::mat(2,3+2*n)),
             Sigma(arma::mat(3+2*n,3+2*n)), //get rid of this
-            Q(arma::mat(3+2*n,3+2*n)),
+            Q(arma::mat(3+2*n,3+2*n, arma::fill::zeros)),
             R(arma::mat (2,2, arma::fill::eye)),
             q(arma::mat(3,1)),
             z_hat(arma::mat(2,1))
 
             {}
+
+    // EKFilter::EKFilter(int n) :
+    //         n(n),
+    //         Xi(arma::mat(3+2*n,1)),
+    //         K(arma::mat(3+2*n,3+2*n)),
+    //         H(arma::mat(2,3+2*n)),
+    //         Sigma(arma::mat(3+2*n,3+2*n)), //get rid of this
+    //         Q(arma::mat(3+2*n,3+2*n)),
+    //         R(arma::mat (2,2, arma::fill::eye)),
+    //         q(arma::mat(3,1)),
+    //         z_hat(arma::mat(2,1))
+
+    //         {}
 
     void EKFilter::EKFilter_init(turtlelib::Q robot_state){
         // Initialize Xi, m, and Sigma to zero
@@ -96,7 +109,6 @@ namespace nuslam{
         // KH.print();
         arma::mat I = arma::eye(arma::size(KH));
         Sigma = (I - KH) * Sigma;
-        // Sigma.print("Sigma after printing");
     }
 
     void EKFilter::UpdatePosState(double x, double y){
@@ -181,9 +193,11 @@ namespace nuslam{
 
     void EKFilter::init_Q_R(double val, double rval){
         // ROS_WARN_STREAM("INIT QR");
-        for(int i=0; i<3; i++){
-            Q(i,i) = val;
-        }
+        
+        Q(0,0) = val;
+        Q(1,1) = val;
+        Q(2,2) = val;
+
         R *= rval;
         // R.print("R");
     }
