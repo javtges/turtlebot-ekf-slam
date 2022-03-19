@@ -1,0 +1,78 @@
+<launch>
+
+    <arg name="cmd_src" default="circle" doc="Controls the input of cmd_vel commands. 'circle' moves the robot in a circle, 'teleop' allows user control, and 'none' starts no cmd_vel publishers."/>
+    <arg name="use_rviz" default="true" doc="Determines if rviz is to be launched. Default is true."/>
+    <arg name="robot" default="nusim" doc="Determines the robot to run. The default is 'nusim' for simulation, 'localhost' to run the nodes from the turtlebot3, or a turtlebot name to run the nodes on a specific robot."/>
+
+<!-- Load diff_params from load.launch -->
+    <param name="body_id" value="blue-base_footprint"/>
+    <param name="odom_id" value="odom"/>
+    <param name="wheel_left" value="blue-wheel_left_joint"/>
+    <param name="wheel_right" value="blue-wheel_right_joint"/> 
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+
+    <group>
+        <include file="$(find nuturtle_description)/launch/load.launch">
+            <arg name="use_rviz" value="false"/>
+            <arg name="use_jsp" value="true"/>
+            <arg name="color" value="blue"/>
+        </include>
+
+        <include file="$(find nuturtle_description)/launch/load.launch">
+            <arg name="use_rviz" value="false"/>
+            <arg name="use_jsp" value="true"/>
+            <arg name="color" value="green"/>
+        </include>
+    </group>
+
+<!-- ROBOT ARGUMENT OPTIONS -->
+    <group if="$(eval arg('robot') == 'nusim')">
+        <include file="$(find nuturtle_description)/launch/load.launch">
+            <arg name="use_rviz" value="false"/>
+            <arg name="use_jsp" value="false"/>
+            <arg name="color" value="red"/>
+        </include>
+        
+        <node type="nusim" name="nusim" pkg="nusim">
+            <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
+        </node>
+    </group>
+
+    <include file="$(find nuturtle_control)/launch/basic_remote.launch" if="$(eval arg('robot') != 'nusim')">
+        <arg name="robot" value="$(arg robot)"/>
+    </include>
+
+
+
+<!-- REQUIRED FOR BOTH -->
+
+    <group if="$(eval arg('robot') != 'nusim')">
+        <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control" machine="turtlebot"/>
+        <node type="odometry_node" name="odometry_node" pkg="nuturtle_control" machine="turtlebot"/>
+    </group>
+
+    <group if="$(eval arg('robot') == 'nusim')">
+        <node type="turtle_interface_node" name="turtle_interface_node" pkg="nuturtle_control"/>
+        <node type="odometry_node" name="odometry_node" pkg="nuturtle_control"/>
+    </group>
+
+<!-- CMD_SRC OPTIONS -->
+    <node type="circle_node" name="circle_node" pkg="nuturtle_control" if="$(eval arg('cmd_src') == 'circle')"/>
+    <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch" pass_all_args="true" if="$(eval arg('cmd_src') == 'teleop')"/>
+
+
+<!-- OTHER THINGS -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map_broadcaster" args="0 0 0 0 0 0 1 world map" />
+    
+    <group if="$(arg use_rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuslam)/config/slam_robot.rviz" if="$(eval arg('robot') == 'nusim')"/>
+        <node pkg="rviz" type="rviz" name="rviz" args=" -d $(find nuslam)/config/slam_robot_blue.rviz" if="$(eval arg('robot') != 'nusim')"/>
+    </group>
+
+    <node pkg="nuslam" type="slam_node" name="slam_node"/>
+
+    <node pkg="nuslam" type="landmarks_node" name="landmarks_node"/>
+
+
+
+</launch>
