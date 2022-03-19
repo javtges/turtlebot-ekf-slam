@@ -9,6 +9,8 @@
 #include <ros/ros.h>
 
 
+/// \brief The supporting library for the EKFilter.
+
 namespace nuslam{
 
     EKFilter::EKFilter(int n) :

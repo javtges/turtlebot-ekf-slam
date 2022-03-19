@@ -25,6 +25,19 @@
 #include "nuslam/nuslam.hpp"
 #include <armadillo>
 
+/// \file
+/// \brief Determines where the landmarks are from the lidar data, and publishes them accordingly.
+///
+/// PARAMETERS:
+///     /nusim/frequency (int): Frequency of the node in Hz
+///     /min_lidar_range (float): Minimum lidar range in meters
+///     /max_lidar_range (float): Maximum lidar range in meters
+/// PUBLISHES:
+///     /fake_sensor (nav_msgs::MarkerArray): The markers found by the lidar data.
+/// SUBSCRIBES:
+///     /laser_scan (sensor_msgs::LaserScan): The raw ranges and bearings of the lidar data.
+
+
 static int frequency;
 static double max_range, min_range;
 static visualization_msgs::MarkerArray ma;

@@ -25,7 +25,7 @@
 #include <armadillo>
 
 /// \file
-/// \brief Handles the odometry to allow the blue turtlebot to move in simulation and real life.
+/// \brief Handles the SLAM to allow the green turtlebot to move in simulation and real life.
 ///
 /// PARAMETERS:
 ///     /nusim/frequency (parameter_type): description of the parameter
@@ -37,7 +37,8 @@
 ///     /wheel_left (std::string): The name of the left wheel joint.
 ///     /wheel_right (std::string): The name of the right wheel joint.
 /// PUBLISHES:
-///     /odom (nav_msgs::Odometry): The odometry of the blue turtlebot. Publishes 500 times per second.
+///     /odom (nav_msgs::Odometry): The odometry of the green turtlebot. Publishes 500 times per second.
+///     /green_path (nav_msgs::Path): The path of the green turtlebot. Publishes 5 times per second.
 /// SUBSCRIBES:
 ///     /red/joint_states (sensor_msgs::JointStates): The joint states of the turtlebot.
 /// SERVICES:
