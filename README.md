@@ -15,4 +15,6 @@ https://youtu.be/o4k6hs_qkiI
 
 Here is the SLAM without data association - using omniscient knowledge of where the markers are in the world.
 
+https://youtu.be/XMKJ3N6Otlw
+
 This can be run on the real turtlebot as well, however there were some issues with the turtlebots themselves and the functionality for the LiDAR.
