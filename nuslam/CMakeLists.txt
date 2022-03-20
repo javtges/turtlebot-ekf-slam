@@ -9,6 +9,7 @@ project(nuslam)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
 
+    catch_ros
     nuturtlebot_msgs
     roscpp
     tf2_ros
@@ -144,6 +145,11 @@ add_executable(slam_node src/slam.cpp)
 add_executable(landmarks_node src/landmarks.cpp)
 
 
+catch_add_test(${PROJECT_NAME}_test
+	  test/circle_tests.cpp
+)
+
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -169,6 +175,13 @@ target_link_libraries(slam_node
 )
 
 target_link_libraries(landmarks_node
+  ${catkin_LIBRARIES}
+  ${ARMADILLO_LIBRARIES}
+  ${PROJECT_NAME}
+  turtlelib
+)
+
+target_link_libraries(${PROJECT_NAME}_test
   ${catkin_LIBRARIES}
   ${ARMADILLO_LIBRARIES}
   ${PROJECT_NAME}

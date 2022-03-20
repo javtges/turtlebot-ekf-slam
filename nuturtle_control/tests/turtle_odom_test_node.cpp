@@ -54,7 +54,7 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
     // PUT NODEHANDLERS AND SUBSCRIBERS/PUBLISHERS HERE
     ros::NodeHandle n;
 
-    odom_frame = "odom";
+    odom_frame = "world";
     body_id = "blue-base_footprint";
 
     tf2_ros::TransformBroadcaster br;
@@ -114,7 +114,7 @@ TEST_CASE("testing turtle_interface subscribers and publishers", "[turtle_interf
         r.sleep();
         ros::spinOnce();
 
-        transformStamped = tfBuffer.lookupTransform("odom", "blue-base_footprint", ros::Time(0));
+        transformStamped = tfBuffer.lookupTransform("world", "blue-base_footprint", ros::Time(0));
 
         CHECK(transformStamped.transform.translation.x == 2);
         CHECK(transformStamped.transform.translation.y == 1);

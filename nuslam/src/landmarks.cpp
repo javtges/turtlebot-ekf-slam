@@ -45,7 +45,6 @@ static visualization_msgs::MarkerArray ma;
 static ros::Publisher marker_pub;
 
 void laser_scan_callback(const sensor_msgs::LaserScan & msg){
-    // ROS_WARN_STREAM("AAA");
 
     visualization_msgs::MarkerArray maTemp;
     int n_circles = 0;
@@ -66,17 +65,10 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
         
         if(i==0){
             prev_range = msg.ranges[length-1];
-            // double mx = std::cos(turtlelib::deg2rad(i)) * (prev_range);
-            // double my = std::sin(turtlelib::deg2rad(i)) * (prev_range);
-
-            // prev_distance = std::sqrt( std::pow(mx,2) + std::pow(my,2));
+            
         }
         else{
             prev_range = msg.ranges[i-1];
-            // double mx = std::cos(turtlelib::deg2rad(i)) * (prev_range);
-            // double my = std::sin(turtlelib::deg2rad(i)) * (prev_range);
-
-            // prev_distance = std::sqrt( std::pow(mx,2) + std::pow(my,2));
         }
 
         double mx = std::cos(turtlelib::deg2rad(i)) * (range);
@@ -135,22 +127,27 @@ void laser_scan_callback(const sensor_msgs::LaserScan & msg){
             for (int k=0; k<n; k++){ // loop through points in cluster
                 x_sum += clusters.at(j).at(k).x;
                 y_sum += clusters.at(j).at(k).y;
-                z_sum += std::pow(clusters.at(j).at(k).x, 2) + std::pow(clusters.at(j).at(k).y, 2);
+                // z_sum += std::pow(clusters.at(j).at(k).x, 2) + std::pow(clusters.at(j).at(k).y, 2);
             }
 
             // Find averages
             x_bar = x_sum / n ;
             y_bar = y_sum / n ;
-            z_bar = z_sum / n ;
+            // z_bar = z_sum / n ;
 
             for (int l=0; l<n; l++){ // loop through points in cluster again
                 double x_i = clusters.at(j).at(l).x - x_bar;
                 double y_i = clusters.at(j).at(l).y - y_bar;
+                
+                z_sum += std::pow(x_i, 2) + std::pow(y_i, 2);
+
                 Z(l,0) = std::pow(x_i, 2) + std::pow(y_i, 2);
                 Z(l,1) = x_i;
                 Z(l,2) = y_i;
                 Z(l,3) = 1;
             }
+
+            z_bar = z_sum / n;
 
             arma::mat M = (1/n) * Z.t() * Z;
             arma::mat H = arma::eye(4,4);
