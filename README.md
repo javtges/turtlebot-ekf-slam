@@ -1,4 +1,4 @@
-# ME495 Sensing, Navigation and Machine Learning For Robotics
+# Extended Kalman Filter (EKF) SLAM from Scratch
 * James Avtges
 * Winter 2022
 # Package List
